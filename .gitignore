@@ -1,0 +1,42 @@
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Secrets and local environment files
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Dataset files (keep directory markers and documentation)
+/data/raw/*
+!/data/raw/.gitkeep
+/data/processed/*
+!/data/processed/.gitkeep
+!/data/README.md
+
+# Generated artifacts and temporary model files
+/artifacts/*
+!/artifacts/.gitkeep
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.keras
+*.pt
+*.pth
+*.onnx
+
+# OS temporary files
+.DS_Store
+._*
+Thumbs.db
+desktop.ini
