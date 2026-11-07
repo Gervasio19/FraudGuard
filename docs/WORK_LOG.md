@@ -3,9 +3,30 @@
 ## Current status
 
 - **Current phase:** Phase 4 — Model Development & Evaluation, in progress. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. Current work: retrospective documentation remediation of Phases 1–4c (see the session below). Phase 5 has not started.
-- **Git state:** branch `main`, `HEAD` `cffc32c` (`Complete Phase 4c threshold analysis`), which is also `origin/main`. The remediation changes from the session below are uncommitted.
-- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1 created in the remediation session below).
+- **Git state:** branch `main`, `HEAD` `0459921` (`docs: update Phase 1 audit report`), which is also `origin/main` and contains the Phase 1 remediation. The Phase 2 documentation changes from the session below are uncommitted.
+- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; created in the sessions below).
 - **Raw data:** `data/raw/creditcard.csv` is local and ignored by Git. It has not been modified (SHA-256 `76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89`, checked before and after Phases 4a, 4b and 4c, and again during the 2026-11-08 retrospective audit).
+
+## Phase 2 retrospective audit and documentation (2026-11-08)
+
+Scope: a read-only audit of Phase 2 (`812c356`), then documentation-only changes approved by the project owner. No source code, tests, notebooks, datasets, `requirements.txt`, `docs/business_understanding.md` or other phase artifacts were changed. Nothing was committed or pushed.
+
+- **Owner decisions recorded:**
+  - `notebooks/01_data_understanding.ipynb` stays exactly as committed in `812c356`, without outputs. The Phase 2 report records its re-executed outputs instead.
+  - `docs/business_understanding.md` is not edited. Its Phase 2 wording, partly rewritten in `fadebd7`, is quoted from `812c356` in the report.
+  - The complete time-of-day table is included in the Phase 2 report.
+- **Audit verification (newly performed, not historical):**
+  - An unchanged copy of the notebook, executed outside the repository with the designated environment, completed without error. It reproduced every documented Phase 2 figure: 284,807 × 31, 492 frauds (0.1727%), majority-class accuracy 99.8273%, 0 missing values, 1,081 full-row duplicates, and no label values outside {0, 1}.
+  - The raw-data SHA-256 matched the recorded value.
+- **Findings recorded in the report** (retrospective observations, not original Phase 2 results):
+  - The notebook was committed without outputs. The only historical execution evidence is the later entry in this log (`c0ecd3c`).
+  - Duplicates were checked over full rows only: 1,081 excess rows in 773 groups. Over the model features (`V1`–`V28` + `Amount`) there are 9,144 excess rows in 5,149 groups, all with consistent labels. Duplicates are not treated as leakage in themselves.
+  - Fraud rate by elapsed hour modulo 24 (full table in the report): 0.474% in hours 00–06 (28,035 transactions, 133 frauds) against 0.140% in hours 07–23. Validation and test cover only hour values 12–18 and 18–23.
+  - `V1`–`V28` are centered and uncorrelated over the full file but not over the training rows. This is consistent with, but does not prove, a PCA fitted on the full 48 hours. `V3` correlates with `Time` (r = −0.42).
+  - `Amount` has 1,825 zero values (27 fraud) and skewness 16.98.
+  - Amount-weighted recall is proposed only as an optional supplementary metric. It is not implemented.
+- **Deferred:** partition-level consequences of duplicates, time-of-day coverage and PCA provenance are left to the Phase 3 and Phase 4 retrospective reports.
+- **File created:** `docs/reports/phase2_data_understanding.md`.
 
 ## Retrospective audit and Phase 1 documentation remediation (2026-11-08)
 
@@ -279,4 +300,6 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (end of Phase 4c):* mentor review of Phase 4c, including the results-file size question. Both were resolved on 2026-11-08: Phase 4c is approved (`cffc32c`) and the results file stays in Git.
 
-**Current:** review of the Phase 1 documentation remediation (see the 2026-11-08 session at the top), then the Phase 2 lesson and remediation, after approval. Do not begin Phase 5, and do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
+*Historical (after the Phase 1 remediation):* review of the Phase 1 documentation remediation, then the Phase 2 lesson and remediation. The Phase 1 remediation was committed in `0459921`, and the Phase 2 audit and report were completed (see the 2026-11-08 Phase 2 session at the top).
+
+**Current:** mentor review of the Phase 2 retrospective report and documentation changes, then the Phase 3 audit, after approval. Do not begin Phase 5, and do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
