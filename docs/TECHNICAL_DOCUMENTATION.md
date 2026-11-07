@@ -2,7 +2,7 @@
 
 Reference for implemented and tested components. Methodology and status live in `docs/PROJECT_CONTEXT.md`, and experiment history and results in `docs/WORK_LOG.md`. This file describes only code that exists and is covered by tests.
 
-Status: covers Phase 4a (chronological split) and Phase 4b (baseline modeling). The Phase 4b decisions were approved by the mentor on 2026-11-07, and Phase 4b completion awaits independent mentor approval.
+Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, implemented and awaiting mentor review).
 
 ## Running
 
@@ -12,9 +12,10 @@ From the repository root, using the designated environment (`/Users/duc/Desktop/
 python -m unittest discover -s tests -v          # all tests
 python -m src.models.run_baselines               # Phase 4b experiments
 python -m src.models.run_baselines --data PATH --output PATH --random-state 42
+python -m src.models.run_threshold_analysis     # Phase 4c threshold analysis (same options)
 ```
 
-The runner reads `data/raw/creditcard.csv` by default and writes `reports/phase4b_baseline_results.json`. It finishes in about 5 seconds.
+Both runners read `data/raw/creditcard.csv` by default. They write `reports/phase4b_baseline_results.json` (about 5 seconds) and `reports/phase4c_threshold_results.json` (about 9.5 MB, about 3 seconds).
 
 ## Data flow
 
@@ -31,6 +32,19 @@ CSV ──► DatasetConfig (column roles)
 ```
 
 Test rows are never passed to a model.
+
+Phase 4c (chronological split only):
+
+```
+fit_and_score(builder=build_logistic_regression) ──► one fit on train, one predict_proba on validation
+          │  y_true, y_score (validation index and order preserved)
+          ├─► threshold_curve + select_max_f1_threshold        ── full validation (retrospective)
+          ├─► split_two_time_windows(validation Time)
+          │      ├─ window_1: curve + max-F1 ──► frozen threshold ──► evaluate_threshold(window_2)
+          │      └─ window_2: curve + max-F1 (retrospective diagnostic only)
+          ▼
+   dumps() ──► reports/phase4c_threshold_results.json
+```
 
 ## `src/config.py`
 
@@ -98,12 +112,52 @@ The metrics fall into two groups:
 
 ## `src/models/experiment.py`
 
-- `fit_and_evaluate(df, partitions, config, builders, random_state, evaluation_partition="validation")` resolves the features from `config` and validates them. It fits each pipeline on the `train` rows and scores the evaluation rows. It returns `{model: {"metrics", "convergence_warnings", "n_iter"}}`. It raises if the evaluation partition is `test` or `train`, if the partitions are misaligned or use unknown labels, or if training contains no positives.
+- `fit_and_score(df, partitions, config, builder, random_state, evaluation_partition="validation")` fits one pipeline on the `train` rows and calls `predict_proba` once on the evaluation rows. It returns a `ScoredModel` with the fitted `pipeline`, `evaluation_rows`, `y_true`, `y_score` (a Series aligned to the evaluation index, in original row order), `convergence_warnings` and `n_iter`. It applies the same validation and test-partition refusal as `fit_and_evaluate`. Added in Phase 4c by extracting code from `fit_and_evaluate`; Phase 4b output is unchanged.
+- `fit_and_evaluate(df, partitions, config, builders, random_state, evaluation_partition="validation")` calls `fit_and_score` for each builder, then `predict` for the diagnostic metrics. It resolves the features from `config` and validates them. It fits each pipeline on the `train` rows and scores the evaluation rows. It returns `{model: {"metrics", "convergence_warnings", "n_iter"}}`. It raises if the evaluation partition is `test` or `train`, if the partitions are misaligned or use unknown labels, or if training contains no positives.
 - `summarize_partitions(df, partitions, config)` reports rows, positives and prevalence per partition, plus the cross-partition duplicate-group count.
 
 ## `src/models/run_baselines.py`
 
 `run(config, random_state)` runs Experiment A (chronological) and Experiment B (stratified random) and returns a JSON-ready dict. The dict contains the dataset SHA-256, feature list, model settings, split settings, library versions, partition summaries and per-model validation metrics; the two experiments are kept separate. `main()` is the CLI.
+
+## `src/evaluation/threshold.py` (Phase 4c)
+
+All functions validate their inputs. They reject empty inputs, length mismatches, non-numeric or non-finite scores, scores outside [0, 1], and missing labels. They accept a `positive_label`.
+
+- `threshold_candidates(y_score)`: unique scores, ascending (`numpy.unique`).
+- `threshold_curve(y_true, y_score)`: one row per candidate, returned as columns (`CURVE_COLUMNS`): `threshold`, `tp`, `fp`, `tn`, `fn`, `precision`, `recall`, `f1`, `n_predicted_positive`, `alert_rate`. Counts are exact: TP at threshold `t` is the number of positives with score ≥ `t`, found by binary search over the sorted scores, in O(n log n).
+- `evaluate_threshold(y_true, y_score, threshold)`: the same row for one fixed threshold, which need not be a candidate.
+- `select_max_f1_threshold(curve)`: the row with maximal F1, choosing the lowest threshold on ties. It raises if F1 is undefined everywhere.
+
+Definitions:
+
+- Decision rule: `score >= threshold`.
+- `F1 = 2TP / (2TP + FP + FN)`. This equals `2PR/(P+R)` whenever both are defined. Because it is one division of integers, equal F1 values compare exactly equal, so ties are detected reliably.
+- Undefined values are NaN (JSON `null`): precision when there are no predicted positives, recall when there are no positives, and F1 when either is undefined. F1 is 0 when TP = 0 and both precision and recall are defined.
+
+## `src/data/temporal_windows.py` (Phase 4c)
+
+`split_two_time_windows(times)` returns a `TimeWindows` object with these fields:
+
+- `labels`: ordered categorical `window_1`/`window_2`, aligned to `times.index`;
+- `window_1_end_time`, the inclusive end of window 1, and `window_2_start_time`;
+- `n_window_1` and `n_window_2`.
+
+The boundary is chosen among the gaps between consecutive unique timestamps to minimize `|n_W1 − n_W2|`, taking the earliest on ties. Rows with equal timestamps always share a window. The function raises on non-Series or non-numeric input, on NaN or infinite values, and on fewer than two distinct timestamps.
+
+## `src/models/run_threshold_analysis.py` (Phase 4c)
+
+- `analyse(df, config, random_state, builder)` runs the whole protocol in memory. The `builder` parameter lets tests record which rows reach each call.
+- `run(config, random_state)` loads `config.path` and calls `analyse`.
+- `dumps(output)` writes strict JSON: NaN becomes `null`, `allow_nan=False` is enforced, and floats keep full precision. Each threshold-curve column is written on one line.
+- `main()` is the CLI.
+
+Top-level output keys:
+
+- `dataset`, `model`, `evaluation_protocol`, `environment`;
+- `full_validation`: `partition_summary`, `selected_threshold`, `metrics`, `threshold_curve`;
+- `temporal_windows`: `boundary_time` (inclusive end of window 1), `window_2_start_time`, the window sizes, and `window_1`/`window_2` analyses;
+- `threshold_transfer`: `transferred_threshold`, `source_selection_f1`, `metrics`, `retrospective_optimum`, and `f1_difference` (transferred − retrospective).
 
 ## Adding a dataset
 
@@ -120,5 +174,7 @@ Feature columns must be numeric and finite. Categorical encoding and imputation 
 | `tests/test_split.py` | 36 | Chronological boundaries, grouping, preservation, input validation, documented real-data counts |
 | `tests/test_random_split.py` | 23 | Proportions, stratification, duplicate groups, conflicting labels, determinism and row-order independence, input validation, real-data counts for seed 42 |
 | `tests/test_baselines.py` | 38 | Config resolution, train-only scaler fitting, model invariance to validation/test changes, test rows never scored, refusal to evaluate on test, baseline behavior, LR probabilities and reproducibility, hand-checked metrics, compatibility with both splits, end-to-end CLI run, real-data result regression |
+| `tests/test_threshold.py` | 29 | Unique candidates, inclusive `>=` rule, hand-calculated precision/recall/F1/confusion counts, brute-force count check, undefined values, lowest-threshold tie-break, rejection of invalid inputs; window boundary balance, earliest-boundary ties, timestamp integrity, alignment, determinism, invalid timestamps |
+| `tests/test_threshold_analysis.py` | 17 | One fit on train only; one `predict_proba` on validation only; test rows never used; windows partition validation chronologically; Window 1 threshold transferred unchanged and independent of Window 2 labels; transfer metrics recomputed independently; reproducibility; strict JSON with NaN as null; full float precision; end-to-end CLI run; real-data result regression |
 
 Real-data tests are skipped when `data/raw/creditcard.csv` is absent.

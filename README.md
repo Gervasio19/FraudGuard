@@ -1,6 +1,6 @@
 # FraudGuard
 
-FraudGuard is an educational portfolio project exploring machine learning for financial fraud detection. The project is under development. Phases 1–3 are complete. Phase 4 (model development) is in progress: chronological partitioning (4a) is implemented, and two baseline models (4b) have been implemented and evaluated on validation data. Their methodology decisions are approved, and Phase 4b completion awaits mentor approval.
+FraudGuard is an educational portfolio project exploring machine learning for financial fraud detection. The project is under development. Phases 1–3 are complete. Phase 4 (model development) is in progress: chronological partitioning (4a) is implemented, two baseline models (4b) have been implemented and evaluated on validation data, and threshold analysis with a temporal stability check (4c) is implemented and awaiting review.
 
 ## Business problem
 
@@ -28,6 +28,7 @@ Run these from the repository root, with `data/raw/creditcard.csv` in place:
 ```bash
 python -m unittest discover -s tests -v   # run the test suite
 python -m src.models.run_baselines        # run the baseline experiments (writes reports/phase4b_baseline_results.json)
+python -m src.models.run_threshold_analysis  # run the threshold analysis (writes reports/phase4c_threshold_results.json)
 ```
 
 See [docs/TECHNICAL_DOCUMENTATION.md](docs/TECHNICAL_DOCUMENTATION.md) for the components, and [docs/WORK_LOG.md](docs/WORK_LOG.md) for recorded results.
@@ -37,9 +38,14 @@ See [docs/TECHNICAL_DOCUMENTATION.md](docs/TECHNICAL_DOCUMENTATION.md) for the c
 1. Project initialization (complete).
 2. Business understanding and dataset exploration (complete).
 3. Data preparation and validation design (complete).
-4. Model development and evaluation (in progress: 4a chronological split done; 4b baselines awaiting completion approval).
+4. Model development and evaluation (in progress: 4a chronological split and 4b baselines done; 4c threshold analysis awaiting review).
 5. Results communication and project presentation.
 
 ## Status
 
-**Under development — Phase 4b: Baseline Modeling, awaiting completion approval.** A majority-class baseline and a class-weighted Logistic Regression have been evaluated on validation data only, under a primary chronological split and a secondary duplicate-aware stratified random split (70/15/15, seed 42). They are reported with ranking metrics (average precision, ROC-AUC) and diagnostic metrics at the default 0.5 rule; 0.5 is not an operating threshold. No feature engineering, hyperparameter tuning, threshold selection, or test-set evaluation has been performed.
+**Under development — Phase 4c: Threshold Analysis & Temporal Stability, awaiting review.**
+
+- **Phase 4b:** a majority-class baseline and a class-weighted Logistic Regression were evaluated on validation data only, under a primary chronological split and a secondary duplicate-aware stratified random split (70/15/15, seed 42).
+- **Phase 4c:** the Logistic Regression's validation scores were analysed across every unique threshold. An F1-maximizing threshold chosen on the first half of validation was then tested, unchanged, on the second half.
+
+These thresholds are analytical; no operational threshold has been chosen. No feature engineering, hyperparameter tuning, or test-set evaluation has been performed. Results and their limitations are in [docs/WORK_LOG.md](docs/WORK_LOG.md).

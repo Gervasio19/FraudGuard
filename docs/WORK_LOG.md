@@ -2,10 +2,74 @@
 
 ## Current status
 
-- **Current phase:** Phase 4 — Model Development & Evaluation, in progress. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is implemented and tested. Its three open decisions were approved by the mentor, and the final verification passed (see the decision finalization session below). **Phase 4b completion awaits independent mentor approval; it is not marked complete.** Phase 4c has not started.
-- **Git state:** branch `main`, `HEAD` `37d4521` (`Complete Phase 4a chronological data splitting`). Phase 4b changes are uncommitted in the working tree (see the Phase 4b session below).
+- **Current phase:** Phase 4 — Model Development & Evaluation, in progress. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`; the Phase 4c specification lists it as a completed prerequisite. **Phase 4c (threshold analysis and temporal stability) is implemented and tested, and awaits mentor review.** It is not marked complete, and it is uncommitted.
+- **Git state:** branch `main`, `HEAD` `4b5b94b` (`Complete Phase 4b baseline experiments`). Phase 4c changes are uncommitted in the working tree (see the Phase 4c session below).
 - **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`.
-- **Raw data:** `data/raw/creditcard.csv` is local and ignored by Git. It has not been modified (SHA-256 `76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89`, checked before and after Phase 4a and Phase 4b).
+- **Raw data:** `data/raw/creditcard.csv` is local and ignored by Git. It has not been modified (SHA-256 `76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89`, checked before and after Phases 4a, 4b and 4c).
+
+## Phase 4c session — threshold analysis and temporal stability (2026-11-08)
+
+Scope: implemented the mentor's Phase 4c Technical Specification. Out of scope and not done: new models, retraining per threshold or window, hyperparameter tuning, feature engineering, resampling, calibration, SHAP, test-set evaluation, threshold optimization on the random split, raw-data edits, commits or pushes.
+
+- **Files created:**
+  - `src/evaluation/threshold.py`: `threshold_candidates`, `threshold_curve`, `evaluate_threshold` and `select_max_f1_threshold`.
+  - `src/data/temporal_windows.py`: `split_two_time_windows`.
+  - `src/models/run_threshold_analysis.py`: the CLI `python -m src.models.run_threshold_analysis`.
+  - `reports/phase4c_threshold_results.json`: about 9.5 MB, holding the three full threshold curves.
+  - `tests/test_threshold.py` (29 tests) and `tests/test_threshold_analysis.py` (17 tests).
+- **Files modified:**
+  - `src/models/experiment.py`: extracted `fit_and_score` and `ScoredModel` (fit once on train, score once on validation) from `fit_and_evaluate` so that Phase 4c reuses the Phase 4b fitting code. This is behavior-preserving: the regenerated `reports/phase4b_baseline_results.json` was byte-identical to the committed file, and all Phase 4b tests pass.
+  - Documentation: README, PROJECT_CONTEXT, WORK_LOG, TECHNICAL_DOCUMENTATION and FINAL_REPORT (still pending).
+- **Not modified:** the Phase 3 boundaries, `src/data/split.py`, `src/data/random_split.py`, the model configuration, the Phase 4b runner's behavior, and the raw data.
+
+### Protocol (as specified)
+
+- **Model:** `logistic_regression_balanced` only (StandardScaler fitted on train; `class_weight="balanced"`, `C=1.0`, `lbfgs`, `max_iter=1000`, `random_state=42`). It is fitted once, on the chronological train partition (199,364 rows / 384 frauds), and converged in 32 iterations. The majority baseline is excluded because its scores are constant.
+- **Scores:** `predict_proba` is called once on chronological validation (42,722 rows / 56 frauds). The scores keep the original index and row order and are reused for every analysis below. The test partition is never scored.
+- **Threshold candidates:** every unique validation score (41,807 candidates for full validation; 21,050 for Window 1; 20,929 for Window 2). The rule `y_score >= threshold` is inclusive.
+- **Selection:** maximize F1, breaking ties by the lowest threshold. F1 is computed as `2TP/(2TP+FP+FN)`, which equals `2PR/(P+R)` when both are defined. Undefined values are `null`.
+- **Windows:** the boundary minimizes `|n_W1 - n_W2|` over boundaries between unique validation timestamps, choosing the earlier boundary on ties. Rows sharing a timestamp stay together.
+
+### Results (verified by running `python -m src.models.run_threshold_analysis`)
+
+| Analysis | Rows / frauds | Threshold | Precision | Recall | F1 | TP | FP | FN | TN | Alerts (rate) |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Full validation, max-F1 (retrospective) | 42,722 / 56 | 0.999995978456591 | 0.9149 | 0.7679 | 0.8350 | 43 | 4 | 13 | 42,662 | 47 (0.110%) |
+| Window 1, max-F1 (selection) | 21,362 / 23 | 0.9999978229787393 | 1.0000 | 0.7391 | 0.8500 | 17 | 0 | 6 | 21,339 | 17 (0.080%) |
+| **Window 2, frozen Window 1 threshold (transfer)** | 21,360 / 33 | 0.9999978229787393 | 0.8889 | 0.7273 | **0.8000** | 24 | 3 | 9 | 21,324 | 27 (0.126%) |
+| Window 2, max-F1 (retrospective diagnostic) | 21,360 / 33 | 0.9999996024880934 | 0.9600 | 0.7273 | 0.8276 | 24 | 1 | 9 | 21,326 | 25 (0.117%) |
+
+- **Windows:** Window 1 is `Time` 132,929–142,280 (prevalence 0.108%); Window 2 is `Time` 142,281–151,328 (prevalence 0.154%). The split is 21,362 / 21,360 rows.
+- **Transfer gap:** transferred F1 − retrospective Window 2 F1 = **−0.0276**. Both thresholds catch the same 24 of 33 Window 2 frauds; the frozen threshold adds 2 extra false positives (3 vs 1).
+- **Comparison with the Phase 4b 0.5 rule:** at 0.5, chronological validation produced 1,309 alerts. The max-F1 threshold produces 47.
+
+### Interpretation (required by the specification)
+
+1. Full validation contains only 56 frauds, and the windows contain only 23 and 33. A change of one or two cases moves precision, recall and F1 materially. For example, the whole transfer gap above is 2 false positives.
+2. The full-validation and Window 2 optima are **retrospective**: they are chosen and measured on the same rows. They are not independently validated or production thresholds.
+3. The Window 1 → Window 2 transfer is the more realistic temporal check. Its result (F1 0.80 against a retrospective 0.83) suggests the threshold carried over reasonably *within this ~48-hour dataset*. It does not establish long-term temporal robustness.
+4. Breaking ties by the lowest threshold is a methodological convention. On the real data, the selected maxima were unique (no tie was triggered at the selected points).
+5. Maximizing F1 is not the same as minimizing financial loss or review cost. No operational threshold has been chosen.
+6. **Score saturation (observed):** the selected thresholds lie within about 5×10⁻⁶ of 1.0. The highest validation score is 0.9999999999999918, and no score equals exactly 1.0, so the candidates are still distinct. Class weighting makes the probabilities uncalibrated, so the thresholds are better read as rank cut-offs (about the top 17–47 alerts) than as fraud probabilities. Because the values sit near floating-point resolution, a different numerical environment could shift them slightly. The counts reported above were reproduced exactly in this environment.
+
+### Verification
+
+- `/Users/duc/Desktop/env/bin/python -W always -m unittest discover -s tests -v` → **143 tests, OK**: the 97 existing tests (Phases 4a and 4b, no regression) plus 29 threshold and window unit tests and 17 integration tests. None were skipped and no warnings appeared.
+- **Mutation checks**, run in a scratch copy outside the repository. Each of the following made tests fail:
+  - transferring the full-validation threshold or the Window 2 optimum instead of the Window 1 threshold;
+  - an exclusive `>` rule, in either the curve or the single-threshold evaluator;
+  - breaking ties by the highest threshold;
+  - choosing the later window boundary on ties;
+  - fitting on train plus validation.
+- **Integration checks:** `fit` sees only train rows, once. `predict_proba` sees only validation rows, once, and `predict` is never called. Corrupting the test rows (NaN features, flipped labels) leaves every result unchanged. Flipping Window 2 labels leaves the transferred threshold and all Window 1 results unchanged.
+- **Reproducibility:** three CLI runs produced byte-identical JSON. The file parses as strict JSON, rejecting `NaN` and `Infinity`.
+- **Phase 4b regression:** `reports/phase4b_baseline_results.json` is unchanged against `HEAD`. The raw-data SHA-256 is unchanged.
+
+### Outstanding issues (Phase 4c)
+
+- **Results file size:** `reports/phase4c_threshold_results.json` is about 9.5 MB because the specification requires the complete curves at full precision. Each curve column is written on one line, which leaves the content identical and cuts the file from 13.4 MB. Whether to track it in Git or keep only a summary in `reports/` is a mentor decision.
+- No confidence intervals or bootstrap estimates are reported.
+- The acceptance criterion "changes are committed and pushed" is not yet met: committing needs the user's go-ahead.
 
 ## Phase 4b decision finalization session (2026-11-07)
 
@@ -185,4 +249,6 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (end of Phase 4a):* begin Phase 4b after approval. That work has now been done (see the Phase 4b session).
 
-**Current:** independent mentor approval of Phase 4b completion. Its decisions are approved and the final verification has passed. Do not begin Phase 4c until Phase 4b is approved. The test partition stays untouched until final evaluation, and no classification threshold is selected until operational criteria and costs are agreed.
+*Historical (end of Phase 4b):* mentor approval of Phase 4b, then Phase 4c. Phase 4b is committed in `4b5b94b`, and Phase 4c has been implemented.
+
+**Current:** mentor review of Phase 4c, including the results-file size question. Do not begin Phase 5 or the final audit until Phase 4c is approved. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
