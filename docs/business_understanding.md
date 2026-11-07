@@ -37,11 +37,11 @@ The project objectives are to:
 3. In later phases, compare suitable approaches using evaluation that reflects imbalance and the tradeoff between missed fraud and false alerts.
 4. Communicate findings and limitations clearly.
 
-Phase 2 documents the business framing and performs basic data understanding only. The current scope does not include model training, advanced exploratory analysis, production deployment, live payment decisions, or claims of operational effectiveness. The dataset contains anonymized PCA components rather than the original transaction attributes, which also limits interpretation.
+Phases 2 and 3 document business understanding, basic data understanding, and the validation design. The current scope does not include model training, advanced exploratory analysis, production deployment, live payment decisions, or claims of operational effectiveness. The dataset contains anonymized PCA components rather than the original transaction attributes, which also limits interpretation.
 
 ## Proposed evaluation considerations
 
-Before modeling, agree on a validation design that respects the data's time structure and avoids information leakage. The dataset spans only two days, so a time-based holdout may be especially sensitive to the small number of fraud cases and should be reviewed carefully.
+The finalized primary design is a chronological 70/15/15 train/validation/test split, with equal `Time` values kept together and duplicate feature groups kept within a single partition. A duplicate-group-aware stratified random split is a secondary benchmark only. The dataset spans only two days, so validation and test contain few fraud cases and resulting metrics may be sensitive to individual examples; see [validation strategy](validation_strategy.md) for boundaries and counts.
 
 For model comparisons, report at least:
 
@@ -52,7 +52,7 @@ For model comparisons, report at least:
 - **Alert volume and threshold behavior:** translate a threshold into the number of cases requiring action.
 - **ROC-AUC, with context:** may be reported as a secondary ranking measure, alongside precision-recall results and class-specific counts.
 
-Threshold selection should reflect an agreed operational capacity and relative error costs. Because the dataset does not provide those costs or a deployment workflow, this phase should not choose a production threshold or claim that one metric alone represents business value. Any later evaluation should state the split strategy, threshold, and limitations, and compare against a simple baseline.
+Threshold selection should reflect an agreed operational capacity and relative error costs. Because the dataset does not provide those costs or a deployment workflow, no classification threshold has been selected; one metric alone should not be treated as business value. Any later evaluation should state the split strategy, threshold, and limitations, and compare against a simple baseline.
 
 ## Dataset reference
 

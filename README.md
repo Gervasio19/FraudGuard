@@ -1,6 +1,6 @@
 # FraudGuard
 
-FraudGuard is an educational portfolio project exploring machine learning for financial fraud detection. The project is under development. Phase 2 business and data understanding are complete; no machine learning models have been trained.
+FraudGuard is an educational portfolio project exploring machine learning for financial fraud detection. The project is under development. Phases 2 and 3 are complete: business and data understanding and validation design are documented. No machine learning models have been trained.
 
 ## Business problem
 
@@ -9,7 +9,7 @@ Payment fraud creates financial losses and operational costs. This project will 
 ## Objectives
 
 - Establish a reproducible project structure and development environment.
-- Document the business problem and inspect the selected public credit card fraud dataset.
+- Document the business problem, inspect the selected public credit card fraud dataset, and finalize validation design.
 - Develop and evaluate fraud detection approaches in subsequent phases.
 - Present findings and project outputs clearly.
 
@@ -24,11 +24,11 @@ Development environment verified for this project: Python 3.13.6 (`/Users/duc/De
 ## Roadmap
 
 1. Project initialization (complete).
-2. Business understanding and dataset exploration (current phase).
-3. Data preparation and feature engineering.
+2. Business understanding and dataset exploration (complete).
+3. Data preparation and validation design (complete).
 4. Model development and evaluation.
 5. Results communication and project presentation.
 
 ## Status
 
-**Under development — Phase 2: Business Understanding & Data Understanding.** Business framing and basic dataset inspection are documented; no machine learning models have been trained.
+**Under development — Phase 3: Data Preparation & Validation Design complete.** Business framing, basic dataset inspection, and validation design are documented. No data preparation, feature engineering, or model training has been performed.
