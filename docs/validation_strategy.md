@@ -40,3 +40,7 @@ The 70/15/15 chronological partition is confirmed. Keep the classification thres
 ## Phase 3 completion summary
 
 The Phase 3 validation design is finalized: use the chronological 70/15/15 partitions in the table above, keep equal timestamps together, and retain all records including duplicate rows. Identical feature groups must remain within one partition; the confirmed chronological boundaries satisfy this constraint for the inspected dataset. Use a duplicate-group-aware stratified random split only as a secondary benchmark. No classification threshold has been selected. No records were removed, no feature engineering was performed, and no models were trained. The principal limitation is the small number of fraud cases in validation and test and the dataset's approximately 48-hour coverage.
+
+## Implementation note (Phase 4b, configuration approved 2026-11-07)
+
+The secondary benchmark is implemented in `src/data/random_split.py`. Rows are grouped by identical values in every column except `Class`. Groups must have a single label. Within each class, the groups are shuffled with `numpy.random.default_rng(42)` and allocated by cumulative row count to 70/15/15 train/validation/test. On the inspected data, this gives train 199,364 rows (344 frauds), validation 42,722 (74) and test 42,721 (74), with no duplicate group crossing partitions. All original rows are preserved. The design decisions above are unchanged. Results from this split are reported separately from the chronological results (see `docs/WORK_LOG.md`).

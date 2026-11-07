@@ -1,0 +1,207 @@
+{
+  "phase": "4b baseline modeling",
+  "dataset": {
+    "name": "creditcard",
+    "path": "data/raw/creditcard.csv",
+    "sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+    "n_rows": 284807,
+    "target_column": "Class",
+    "feature_columns": [
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6",
+      "V7",
+      "V8",
+      "V9",
+      "V10",
+      "V11",
+      "V12",
+      "V13",
+      "V14",
+      "V15",
+      "V16",
+      "V17",
+      "V18",
+      "V19",
+      "V20",
+      "V21",
+      "V22",
+      "V23",
+      "V24",
+      "V25",
+      "V26",
+      "V27",
+      "V28",
+      "Amount"
+    ]
+  },
+  "models": {
+    "majority_class": {
+      "estimator": "DummyClassifier",
+      "strategy": "prior"
+    },
+    "logistic_regression_balanced": {
+      "estimator": "LogisticRegression",
+      "preprocessing": "StandardScaler fitted on training partition",
+      "class_weight": "balanced",
+      "C": 1.0,
+      "solver": "lbfgs",
+      "max_iter": 1000,
+      "random_state": 42
+    }
+  },
+  "evaluation_partition": "validation",
+  "decision_rule_note": "average_precision and roc_auc are ranking metrics computed from predicted probabilities. precision, recall and confusion_matrix are diagnostic metrics at each estimator's default predict() rule (probability >= 0.5 for Logistic Regression; always the majority class for the baseline). 0.5 is not an optimal or production threshold.",
+  "environment": {
+    "python": "3.13.6",
+    "pandas": "2.3.1",
+    "scikit_learn": "1.9.1"
+  },
+  "experiments": {
+    "A_chronological": {
+      "role": "primary",
+      "split": {
+        "method": "chronological",
+        "time_column": "Time",
+        "train_end_time_inclusive": 132928,
+        "validation_end_time_inclusive": 151328
+      },
+      "partitions": {
+        "train": {
+          "n_rows": 199364,
+          "n_positive": 384,
+          "prevalence": 0.0019261250777472363
+        },
+        "validation": {
+          "n_rows": 42722,
+          "n_positive": 56,
+          "prevalence": 0.0013108000561771452
+        },
+        "test": {
+          "n_rows": 42721,
+          "n_positive": 52,
+          "prevalence": 0.00121719997191077
+        }
+      },
+      "cross_partition_duplicate_groups": 0,
+      "results": {
+        "majority_class": {
+          "metrics": {
+            "n_rows": 42722,
+            "n_positive": 56,
+            "prevalence": 0.0013108000561771452,
+            "average_precision": 0.0013108000561771452,
+            "roc_auc": 0.5,
+            "precision": null,
+            "recall": 0.0,
+            "n_predicted_positive": 0,
+            "confusion_matrix": {
+              "tn": 42666,
+              "fp": 0,
+              "fn": 56,
+              "tp": 0
+            }
+          },
+          "convergence_warnings": [],
+          "n_iter": null
+        },
+        "logistic_regression_balanced": {
+          "metrics": {
+            "n_rows": 42722,
+            "n_positive": 56,
+            "prevalence": 0.0013108000561771452,
+            "average_precision": 0.8396604620788174,
+            "roc_auc": 0.9815171498215374,
+            "precision": 0.03972498090145149,
+            "recall": 0.9285714285714286,
+            "n_predicted_positive": 1309,
+            "confusion_matrix": {
+              "tn": 41409,
+              "fp": 1257,
+              "fn": 4,
+              "tp": 52
+            }
+          },
+          "convergence_warnings": [],
+          "n_iter": 32
+        }
+      }
+    },
+    "B_stratified_random": {
+      "role": "secondary benchmark",
+      "split": {
+        "method": "stratified random, duplicate groups kept together",
+        "fractions": [
+          0.7,
+          0.15,
+          0.15
+        ],
+        "random_state": 42,
+        "duplicate_group_columns": "all columns except target"
+      },
+      "partitions": {
+        "train": {
+          "n_rows": 199364,
+          "n_positive": 344,
+          "prevalence": 0.0017254870488152324
+        },
+        "validation": {
+          "n_rows": 42722,
+          "n_positive": 74,
+          "prevalence": 0.0017321286456626562
+        },
+        "test": {
+          "n_rows": 42721,
+          "n_positive": 74,
+          "prevalence": 0.0017321691907960957
+        }
+      },
+      "cross_partition_duplicate_groups": 0,
+      "results": {
+        "majority_class": {
+          "metrics": {
+            "n_rows": 42722,
+            "n_positive": 74,
+            "prevalence": 0.0017321286456626562,
+            "average_precision": 0.0017321286456626562,
+            "roc_auc": 0.5,
+            "precision": null,
+            "recall": 0.0,
+            "n_predicted_positive": 0,
+            "confusion_matrix": {
+              "tn": 42648,
+              "fp": 0,
+              "fn": 74,
+              "tp": 0
+            }
+          },
+          "convergence_warnings": [],
+          "n_iter": null
+        },
+        "logistic_regression_balanced": {
+          "metrics": {
+            "n_rows": 42722,
+            "n_positive": 74,
+            "prevalence": 0.0017321286456626562,
+            "average_precision": 0.7523754463364473,
+            "roc_auc": 0.9725216036238827,
+            "precision": 0.06487025948103792,
+            "recall": 0.8783783783783784,
+            "n_predicted_positive": 1002,
+            "confusion_matrix": {
+              "tn": 41711,
+              "fp": 937,
+              "fn": 9,
+              "tp": 65
+            }
+          },
+          "convergence_warnings": [],
+          "n_iter": 22
+        }
+      }
+    }
+  }
+}
