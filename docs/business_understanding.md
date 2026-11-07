@@ -1,0 +1,59 @@
+# Business Understanding
+
+## Business problem and motivation
+
+Payment card fraud creates direct financial losses and adds work for issuers, payment processors, merchants, and customers. A fraud monitoring process must identify suspicious transactions soon enough to support a useful response while allowing legitimate purchases to proceed. FraudGuard is an educational project that studies how transaction data can support that detection task.
+
+The selected public dataset contains European cardholder transactions from two days in September 2013. It is a historical, anonymized research dataset, not a live production feed. Its narrow time window, age, and transformed feature set limit how directly results can be applied to today's payment operations.
+
+## Fraud detection use cases
+
+A transaction scoring system could support several operational workflows:
+
+- **Real-time authorization support:** flag a transaction for approval, decline, or additional verification before completion.
+- **Analyst review queue:** rank transactions for investigation when immediate automated action is not appropriate.
+- **Customer verification:** trigger a step-up check, such as contacting the cardholder, when a transaction appears suspicious.
+- **Portfolio monitoring:** summarize alerts and detected cases to help teams track fraud activity and review operational rules.
+
+These are example use cases for framing the problem. The dataset itself does not describe an issuing bank's workflow or establish which action should be taken for any transaction.
+
+## Costs of errors
+
+- **False negative:** a fraudulent transaction is treated as legitimate. This can lead to unrecovered transaction loss, follow-on fraud, disputes, and customer harm.
+- **False positive:** a legitimate transaction is flagged as fraud. This can cause a declined purchase, unnecessary verification, customer frustration, lost merchant sales, and investigation workload.
+
+The costs depend on transaction amount, recovery rates, downstream fraud, review capacity, and customer impact. Those quantities are not supplied in this dataset, so a monetary cost function cannot yet be specified credibly.
+
+## Why accuracy is misleading
+
+The target is highly imbalanced: fraud is a very small fraction of all transactions. A classifier that labels every transaction as legitimate would achieve about 99.83% accuracy on the inspected file while detecting none of the 492 fraud cases. Accuracy therefore obscures whether the rare class is being found and how many legitimate transactions are incorrectly flagged. Evaluation should make class-specific outcomes and operating thresholds visible.
+
+## Objectives and scope
+
+The project objectives are to:
+
+1. Understand the dataset's provenance, structure, target, and basic quality before modeling.
+2. Build a reproducible educational workflow for fraud classification.
+3. In later phases, compare suitable approaches using evaluation that reflects imbalance and the tradeoff between missed fraud and false alerts.
+4. Communicate findings and limitations clearly.
+
+Phase 2 documents the business framing and performs basic data understanding only. The current scope does not include model training, advanced exploratory analysis, production deployment, live payment decisions, or claims of operational effectiveness. The dataset contains anonymized PCA components rather than the original transaction attributes, which also limits interpretation.
+
+## Proposed evaluation considerations
+
+Before modeling, agree on a validation design that respects the data's time structure and avoids information leakage. The dataset spans only two days, so a time-based holdout may be especially sensitive to the small number of fraud cases and should be reviewed carefully.
+
+For model comparisons, report at least:
+
+- **Recall (fraud detection rate):** the share of actual fraud cases detected; useful for understanding missed fraud.
+- **Precision:** the share of flagged transactions that are fraud; useful for understanding alert quality and review burden.
+- **Precision-recall curve and average precision:** summarize the precision/recall tradeoff under rare positive cases.
+- **Confusion matrix at a stated threshold:** makes false positives and false negatives explicit.
+- **Alert volume and threshold behavior:** translate a threshold into the number of cases requiring action.
+- **ROC-AUC, with context:** may be reported as a secondary ranking measure, alongside precision-recall results and class-specific counts.
+
+Threshold selection should reflect an agreed operational capacity and relative error costs. Because the dataset does not provide those costs or a deployment workflow, this phase should not choose a production threshold or claim that one metric alone represents business value. Any later evaluation should state the split strategy, threshold, and limitations, and compare against a simple baseline.
+
+## Dataset reference
+
+The local dataset documentation points to the Kaggle **Credit Card Fraud Detection** dataset. The publisher's description says the data covers two days and contains 284,807 transactions with 492 frauds; `V1`–`V28` are principal components obtained with PCA, while `Time` and `Amount` are not PCA-transformed. `Class` is the fraud target (1 for fraud, 0 otherwise). See the [dataset source](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) and the repository's [dataset instructions](../data/README.md).
