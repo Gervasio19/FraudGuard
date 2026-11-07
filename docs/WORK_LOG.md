@@ -2,10 +2,36 @@
 
 ## Current status
 
-- **Current phase:** Phase 4 — Model Development & Evaluation, in progress. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`; the Phase 4c specification lists it as a completed prerequisite. **Phase 4c (threshold analysis and temporal stability) is implemented and tested, and awaits mentor review.** It is not marked complete, and it is uncommitted.
-- **Git state:** branch `main`, `HEAD` `4b5b94b` (`Complete Phase 4b baseline experiments`). Phase 4c changes are uncommitted in the working tree (see the Phase 4c session below).
-- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`.
-- **Raw data:** `data/raw/creditcard.csv` is local and ignored by Git. It has not been modified (SHA-256 `76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89`, checked before and after Phases 4a, 4b and 4c).
+- **Current phase:** Phase 4 — Model Development & Evaluation, in progress. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. Current work: retrospective documentation remediation of Phases 1–4c (see the session below). Phase 5 has not started.
+- **Git state:** branch `main`, `HEAD` `cffc32c` (`Complete Phase 4c threshold analysis`), which is also `origin/main`. The remediation changes from the session below are uncommitted.
+- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1 created in the remediation session below).
+- **Raw data:** `data/raw/creditcard.csv` is local and ignored by Git. It has not been modified (SHA-256 `76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89`, checked before and after Phases 4a, 4b and 4c, and again during the 2026-11-08 retrospective audit).
+
+## Retrospective audit and Phase 1 documentation remediation (2026-11-08)
+
+Scope: a read-only audit of Phases 1–4c, then documentation-only remediation approved by the project owner. No source code, tests, datasets, model configuration, experiment results or `requirements.txt` were changed. Nothing was committed or pushed.
+
+- **Owner decisions recorded:**
+  - The canonical validation/test boundary is `Time = 151328`, as in `src/data/split.py`. A value of `165950` from an earlier project briefing was a recollection error; it appears nowhere in the repository.
+  - Phase 4c is formally approved and complete (`cffc32c`).
+  - `reports/phase4c_threshold_results.json` (about 9.5 MB) stays in Git. Git history is not rewritten.
+  - The remediation plan is executed incrementally, with review between stages.
+- **Audit verification (newly performed, not historical):**
+  - The full test suite passed: 143 tests, OK.
+  - The raw-data SHA-256 matched the value above.
+  - An independent scratch script, kept outside the repository, reproduced the Phase 4b Experiment A Logistic Regression values (average precision 0.8397, ROC-AUC 0.9815, 1,309 alerts at the 0.5 rule, 32 iterations).
+  - Further audit observations are queued for the Phase 2–4 retrospective reports and are not yet project documentation.
+- **Stale status corrected:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/TECHNICAL_DOCUMENTATION.md`, `docs/FINAL_REPORT.md` and this file described Phase 4c as uncommitted or awaiting review. This file also gave `HEAD` as `4b5b94b`, and `docs/PROJECT_CONTEXT.md` described Phase 4c as built on top of `4b5b94b`. All five now describe Phase 4c as approved. All except `docs/FINAL_REPORT.md` cite `cffc32c`, and `docs/PROJECT_CONTEXT.md` and this file record the owner's decision on the results file. Historical session text below is unchanged; resolved items carry *Resolved* notes.
+- **File created:** `docs/reports/phase1_foundation.md`, a retrospective Phase 1 report built from commit `e4e866d` and later Git history.
+
+### Phase 1 record (reconstructed retrospectively from Git)
+
+Phase 1 had no work-log entry at the time; this log was created later, in `c0ecd3c`. The following is reconstructed only from Git evidence:
+
+- **Commit:** `e4e866d` `Initialize FraudGuard project structure`, 2026-11-06, 17 files and 100 lines added.
+- **Files:** `README.md`, `requirements.txt` (six unpinned packages: pandas, numpy, matplotlib, seaborn, jupyter, ipykernel), `.gitignore`, `data/README.md`, empty `src/` subpackages (`data`, `evaluation`, `features`, `models`, `visualization`), and `.gitkeep` placeholders for `app/components`, `artifacts`, `data/raw`, `data/processed`, `notebooks`, `reports/figures` and `tests`.
+- **Replaced later:** the Phase 1 README gave the environment as "Python 3.14.6". Commit `812c356` (Phase 2) replaced this with "Development environment verified for this project: Python 3.13.6 (`/Users/duc/Desktop/env/bin/python`)".
+- **Not done in Phase 1:** no dataset hash, no pinned dependencies, no environment specification file, no tests, and no phase report. Details and rationale: `docs/reports/phase1_foundation.md`.
 
 ## Phase 4c session — threshold analysis and temporal stability (2026-11-08)
 
@@ -67,9 +93,9 @@ Scope: implemented the mentor's Phase 4c Technical Specification. Out of scope a
 
 ### Outstanding issues (Phase 4c)
 
-- **Results file size:** `reports/phase4c_threshold_results.json` is about 9.5 MB because the specification requires the complete curves at full precision. Each curve column is written on one line, which leaves the content identical and cuts the file from 13.4 MB. Whether to track it in Git or keep only a summary in `reports/` is a mentor decision.
+- **Results file size:** `reports/phase4c_threshold_results.json` is about 9.5 MB because the specification requires the complete curves at full precision. Each curve column is written on one line, which leaves the content identical and cuts the file from 13.4 MB. Whether to track it in Git or keep only a summary in `reports/` is a mentor decision. *Resolved (2026-11-08):* the file is tracked in `cffc32c` and stays in Git, by project-owner decision.
 - No confidence intervals or bootstrap estimates are reported.
-- The acceptance criterion "changes are committed and pushed" is not yet met: committing needs the user's go-ahead.
+- The acceptance criterion "changes are committed and pushed" is not yet met: committing needs the user's go-ahead. *Resolved:* Phase 4c was committed as `cffc32c`, which is the current `origin/main`, and was formally approved on 2026-11-08.
 
 ## Phase 4b decision finalization session (2026-11-07)
 
@@ -251,4 +277,6 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (end of Phase 4b):* mentor approval of Phase 4b, then Phase 4c. Phase 4b is committed in `4b5b94b`, and Phase 4c has been implemented.
 
-**Current:** mentor review of Phase 4c, including the results-file size question. Do not begin Phase 5 or the final audit until Phase 4c is approved. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
+*Historical (end of Phase 4c):* mentor review of Phase 4c, including the results-file size question. Both were resolved on 2026-11-08: Phase 4c is approved (`cffc32c`) and the results file stays in Git.
+
+**Current:** review of the Phase 1 documentation remediation (see the 2026-11-08 session at the top), then the Phase 2 lesson and remediation, after approval. Do not begin Phase 5, and do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.

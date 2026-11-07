@@ -3,8 +3,8 @@
 ## Verified repository facts
 
 - FraudGuard is an educational credit-card fraud detection project.
-- Current project phase: **Phase 4 — Model Development & Evaluation, in progress.** Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`, and the Phase 4c specification treats it as a completed prerequisite. **Phase 4c (threshold analysis and temporal stability) is implemented, tested and uncommitted, and awaits mentor review.**
-- Documentation: `README.md` (overview and usage), this file (architecture and methodology), `docs/WORK_LOG.md` (chronological history and experiment results), `docs/TECHNICAL_DOCUMENTATION.md` (component reference), and `docs/FINAL_REPORT.md` (pending placeholder). Topic documents: `docs/business_understanding.md` and `docs/validation_strategy.md`.
+- Current project phase: **Phase 4 — Model Development & Evaluation, in progress.** Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`, and the Phase 4c specification treats it as a completed prerequisite. **Phase 4c (threshold analysis and temporal stability) is approved and complete, committed and pushed in `cffc32c`.** A retrospective documentation remediation of Phases 1–4c is in progress (2026-11-08). Phase 5 has not started.
+- Documentation: `README.md` (overview and usage), this file (architecture and methodology), `docs/WORK_LOG.md` (chronological history and experiment results), `docs/TECHNICAL_DOCUMENTATION.md` (component reference), and `docs/FINAL_REPORT.md` (pending placeholder). Topic documents: `docs/business_understanding.md` and `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `docs/reports/phase1_foundation.md`; Phases 2–4 pending).
 - Data documentation expects `data/raw/creditcard.csv`. Raw data is ignored by Git and must remain unchanged.
 - Requirements listed in `requirements.txt`: pandas, NumPy, Matplotlib, Seaborn, Jupyter, ipykernel and scikit-learn (1.9.1 installed in the designated environment).
 - Tests run from the repository root with `/Users/duc/Desktop/env/bin/python -m unittest discover -s tests -v`. They use the standard-library `unittest`; pytest is not installed or required.
@@ -68,7 +68,7 @@ No feature engineering or hyperparameter tuning has been performed. The data cov
 
 ## Handoff state and next task
 
-Phase 4c is implemented on top of `4b5b94b` on branch `main` and is uncommitted. Next: mentor review of Phase 4c, including whether the 9.5 MB results file should be tracked in Git. Do not begin Phase 5 or the final audit until Phase 4c is approved. Keep the test partition untouched until final evaluation. Threshold selection requires later operational criteria. See `docs/WORK_LOG.md` for details.
+Phase 4c is approved and committed on branch `main` in `cffc32c`. The 9.5 MB results file `reports/phase4c_threshold_results.json` stays tracked in Git (project-owner decision, 2026-11-08), and Git history is not rewritten. Current task: retrospective documentation remediation of Phases 1–4c, executed incrementally with review between stages. No source-code behavior changes are made during documentation recovery unless a correctness issue is found and approved. Do not begin Phase 5, and do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. Threshold selection requires later operational criteria. See `docs/WORK_LOG.md` for details.
 
 ## Assumptions
 

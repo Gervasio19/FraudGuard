@@ -2,7 +2,7 @@
 
 Reference for implemented and tested components. Methodology and status live in `docs/PROJECT_CONTEXT.md`, and experiment history and results in `docs/WORK_LOG.md`. This file describes only code that exists and is covered by tests.
 
-Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, implemented and awaiting mentor review).
+Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`).
 
 ## Running
 
