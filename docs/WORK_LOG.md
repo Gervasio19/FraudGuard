@@ -2,14 +2,40 @@
 
 ## Current status
 
-- **Current phase:** Phase 4 — Model Development & Evaluation, in progress. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. Current work: retrospective documentation remediation of Phases 1–4c (see the session below). Phase 5 has not started.
-- **Git state:** branch `main`, `HEAD` `0459921` (`docs: update Phase 1 audit report`), which is also `origin/main` and contains the Phase 1 remediation. The Phase 2 documentation changes from the session below are uncommitted.
-- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; created in the sessions below).
+- **Current phase:** Phase 4 — Model Development & Evaluation, in progress. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. Current work: retrospective documentation remediation of Phases 1–4c (see the sessions below). The Phase 1 and Phase 2 reports are committed. The Phase 3 report is drafted and **awaiting mentor review**; the Phase 3 audit is not yet recorded as complete. Phase 5 has not started.
+- **Git state:** branch `main`, `HEAD` `9b52a8a` (`docs: add Phase 2 retrospective audit report`), which is also `origin/main` (verified 2026-11-08). It contains the Phase 1 remediation (`0459921`) and the Phase 2 report (`9b52a8a`). The Phase 3 documentation changes from the session below are uncommitted.
+- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`, uncommitted; created in the sessions below).
 - **Raw data:** `data/raw/creditcard.csv` is local and ignored by Git. It has not been modified (SHA-256 `76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89`, checked before and after Phases 4a, 4b and 4c, and again during the 2026-11-08 retrospective audit).
+
+## Phase 3 retrospective audit and documentation (2026-11-08)
+
+Scope: a read-only audit of Phase 3, covering the design commit `fadebd7` and the Phase 4a implementation `37d4521` that realized it, then documentation-only changes approved by the mentor. No source code, tests, notebooks, datasets, `requirements.txt`, Phase 1/2 reports, Phase 4b/4c results or other phase artifacts were changed. No experiment was rerun and the split was not changed. Nothing was committed or pushed. **Status: report drafted, awaiting mentor review.** The Phase 3 audit is recorded as complete only after that approval.
+
+- **Mentor decisions recorded:**
+  - The report covers both `fadebd7` (design and documentation) and `37d4521` (implementation). It states that Phase 3 was design-only in Git.
+  - Model-based diagnostics (distribution-shift classifiers, time-of-day model experiments, bootstrap intervals) are not reported in Phase 3. They belong to the Phase 4 retrospective; Phase 3 only cross-references them.
+  - The tautological duplicate-isolation check and the model-input duplicate findings are documented. Cross-partition duplicates are not called leakage as such. No split change or rerun.
+  - No source code changes. A model-input duplicate checker is recorded as a future improvement needing separate approval.
+  - Test fraud counts known during Phase 3 design are disclosed. The boundary rule was label-independent, and no model or threshold was selected on test performance.
+  - The test partition's scope (hour values 18–23 of day 2 of one approximately 48-hour dataset, prevalence 0.1217%) is documented and must be acknowledged before final test evaluation.
+- **Audit verification (newly performed, not historical):**
+  - Raw-data SHA-256 matched the recorded value. Test suite: 143 tests, OK (`-B -W always`).
+  - `src/data/split.py` and `tests/test_split.py` are unchanged since `37d4521`; `docs/validation_strategy.md` changed after `fadebd7` only by the Phase 4b implementation note.
+  - Independent recomputation reproduced every documented partition count. The documented cumulative-count rule reproduces both boundaries exactly (closest counts to 70% and 85% of 284,807 rows: 199,364 at `Time` 132,928 and 242,086 at `Time` 151,328) without using labels. The assignment is deterministic and independent of row order.
+  - The pipeline's scaler is fitted on the 199,364 training rows only; `Time` is not a model input.
+- **Findings recorded in the report** (retrospective observations, not original Phase 3 results):
+  - Phase 3 (`fadebd7`) contains no code; the boundary derivation and diagnostics were not committed. The work log's Phase 3 verification claims were first written in `c0ecd3c`.
+  - The zero-crossing duplicate check is tautological for the chronological split, because the Phase 3 key includes `Time`. At the model-input level (`V1`–`V28` + `Amount`), 1,335 groups cross chronological partitions and 2,391 cross the random split. All are non-fraud with consistent labels. 824 validation and 896 test rows (chronological) have exact model-input twins in train. These are documented as potential leakage of unmeasured effect, not as leakage or future-data contamination.
+  - Validation and test cover only hour values 12–23 of day 2. Train's higher fraud rate is mainly a composition effect (train hour values 12–23: 0.136%; validation 0.131%; test 0.122%).
+  - Undocumented assumptions: no label delay (the one-second adjacency between partitions is not an embargo), no entity grouping, a single cutoff, and an inherited PCA look-ahead of unknown magnitude.
+- **Correction flagged:** the audit findings gave the "same elapsed span one day earlier" comparisons as 39,898 and 50,265 transactions, from rounded hour boundaries. Exact second boundaries give 39,902 and 50,264. Fraud counts (62, 64) and rates (0.155%, 0.127%) are unchanged. The report uses the exact figures.
+- **Stale status corrected:** this file gave `HEAD` as `0459921` and the Phase 2 changes as uncommitted, and `docs/PROJECT_CONTEXT.md` described the Phase 2 report as awaiting review. Git history shows the Phase 2 report committed in `9b52a8a` (= `origin/main`). Both files now say so. Historical session text is unchanged; resolved items carry *Resolved* notes.
+- **Files created:** `docs/reports/phase3_data_splitting.md`.
+- **Files modified:** `docs/WORK_LOG.md`, `docs/PROJECT_CONTEXT.md`.
 
 ## Phase 2 retrospective audit and documentation (2026-11-08)
 
-Scope: a read-only audit of Phase 2 (`812c356`), then documentation-only changes approved by the project owner. No source code, tests, notebooks, datasets, `requirements.txt`, `docs/business_understanding.md` or other phase artifacts were changed. Nothing was committed or pushed.
+Scope: a read-only audit of Phase 2 (`812c356`), then documentation-only changes approved by the project owner. No source code, tests, notebooks, datasets, `requirements.txt`, `docs/business_understanding.md` or other phase artifacts were changed. Nothing was committed or pushed. *Resolved:* the Phase 2 report and these documentation changes were committed in `9b52a8a`, which is `origin/main`.
 
 - **Owner decisions recorded:**
   - `notebooks/01_data_understanding.ipynb` stays exactly as committed in `812c356`, without outputs. The Phase 2 report records its re-executed outputs instead.
@@ -302,4 +328,6 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (after the Phase 1 remediation):* review of the Phase 1 documentation remediation, then the Phase 2 lesson and remediation. The Phase 1 remediation was committed in `0459921`, and the Phase 2 audit and report were completed (see the 2026-11-08 Phase 2 session at the top).
 
-**Current:** mentor review of the Phase 2 retrospective report and documentation changes, then the Phase 3 audit, after approval. Do not begin Phase 5, and do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
+*Historical (after the Phase 2 report):* mentor review of the Phase 2 retrospective report, then the Phase 3 audit. The Phase 2 report was committed in `9b52a8a`, and the Phase 3 audit and report were completed as a draft (see the Phase 3 session at the top).
+
+**Current:** mentor review of the Phase 3 retrospective report (`docs/reports/phase3_data_splitting.md`) and the accompanying documentation changes. After approval, the Phase 4 retrospective audit, which includes the model-based analyses deferred from Phase 3. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not begin Phase 5, and do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
