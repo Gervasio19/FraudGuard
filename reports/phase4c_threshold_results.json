@@ -225,5 +225,72 @@
     },
     "f1_difference": -0.027586206896551668,
     "f1_difference_definition": "transferred F1 - retrospective Window 2 optimal F1"
+  },
+  "common_reference_thresholds": {
+    "role": "descriptive comparison; not a transfer test",
+    "note": "Separate from threshold_transfer (Window 1 max-F1 frozen and applied to Window 2). Here each reference threshold is applied independently to both windows using the scores already computed; no refitting or rescoring.",
+    "decision_rule": "y_score >= threshold",
+    "window_prevalence": {
+      "window_1": 0.0010766782136504072,
+      "window_2": 0.001544943820224719
+    },
+    "thresholds": {
+      "fixed_0_5": {
+        "threshold": 0.5,
+        "description": "fixed reference; diagnostic only, not an operational threshold",
+        "window_1": {
+          "threshold": 0.5,
+          "tp": 20,
+          "fp": 646,
+          "tn": 20693,
+          "fn": 3,
+          "precision": 0.03003003003003003,
+          "recall": 0.8695652173913043,
+          "f1": 0.05805515239477504,
+          "n_predicted_positive": 666,
+          "alert_rate": 0.03117685609961614
+        },
+        "window_2": {
+          "threshold": 0.5,
+          "tp": 32,
+          "fp": 611,
+          "tn": 20716,
+          "fn": 1,
+          "precision": 0.049766718506998445,
+          "recall": 0.9696969696969697,
+          "f1": 0.09467455621301775,
+          "n_predicted_positive": 643,
+          "alert_rate": 0.030102996254681647
+        }
+      },
+      "full_validation_max_f1": {
+        "threshold": 0.999995978456591,
+        "description": "retrospective: selected on full validation, which includes the labels of both windows",
+        "window_1": {
+          "threshold": 0.999995978456591,
+          "tp": 17,
+          "fp": 0,
+          "tn": 21339,
+          "fn": 6,
+          "precision": 1.0,
+          "recall": 0.7391304347826086,
+          "f1": 0.85,
+          "n_predicted_positive": 17,
+          "alert_rate": 0.000795805636176388
+        },
+        "window_2": {
+          "threshold": 0.999995978456591,
+          "tp": 26,
+          "fp": 4,
+          "tn": 21323,
+          "fn": 7,
+          "precision": 0.8666666666666667,
+          "recall": 0.7878787878787878,
+          "f1": 0.8253968253968254,
+          "n_predicted_positive": 30,
+          "alert_rate": 0.0014044943820224719
+        }
+      }
+    }
   }
 }

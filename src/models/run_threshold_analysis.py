@@ -9,6 +9,9 @@ partition once, score the chronological validation partition once with
    threshold for each window.
 3. Transfer: the Window 1 threshold, frozen, applied unchanged to Window 2,
    compared with Window 2's retrospective optimum.
+4. Common-reference comparison (descriptive, separate from 3): the fixed 0.5
+   threshold and the full-validation max-F1 threshold (retrospective) applied
+   independently to each window.
 
 The test partition is never scored. The secondary random split is not used.
 
@@ -102,6 +105,37 @@ def analyse(
     transferred = evaluate_threshold(y_true[w2].to_numpy(), y_score[w2].to_numpy(), transferred_threshold, positive)
     retrospective = per_window[WINDOW_2]["metrics"]
 
+    # Descriptive common-reference comparison (separate from the transfer above):
+    # the same reference thresholds are applied to each window's existing scores.
+    reference_thresholds = {
+        "fixed_0_5": (0.5, "fixed reference; diagnostic only, not an operational threshold"),
+        "full_validation_max_f1": (
+            full["selected_threshold"],
+            "retrospective: selected on full validation, which includes the labels of both windows",
+        ),
+    }
+    common_reference = {
+        "role": "descriptive comparison; not a transfer test",
+        "note": (
+            "Separate from threshold_transfer (Window 1 max-F1 frozen and applied to Window 2). "
+            "Here each reference threshold is applied independently to both windows using the "
+            "scores already computed; no refitting or rescoring."
+        ),
+        "decision_rule": "y_score >= threshold",
+        "window_prevalence": {
+            name: per_window[name]["partition_summary"]["prevalence"] for name in (WINDOW_1, WINDOW_2)
+        },
+        "thresholds": {},
+    }
+    for key, (threshold, description) in reference_thresholds.items():
+        entry = {"threshold": threshold, "description": description}
+        for name in (WINDOW_1, WINDOW_2):
+            mask = labels == name
+            entry[name] = evaluate_threshold(
+                y_true[mask].to_numpy(), y_score[mask].to_numpy(), threshold, positive
+            )
+        common_reference["thresholds"][key] = entry
+
     return {
         "phase": "4c threshold analysis",
         "dataset": {
@@ -171,6 +205,7 @@ def analyse(
             "f1_difference": transferred["f1"] - retrospective["f1"],
             "f1_difference_definition": "transferred F1 - retrospective Window 2 optimal F1",
         },
+        "common_reference_thresholds": common_reference,
     }
 
 
@@ -203,6 +238,10 @@ def print_summary(output: dict) -> None:
     print(_row("window 2 with frozen W1 threshold", tt["metrics"]))
     print(_row("window 2 max-F1 (retro)", tt["retrospective_optimum"]))
     print(f"  F1 difference (transferred - retrospective): {_fmt(tt['f1_difference'])}")
+    print("Common-reference thresholds (descriptive, not a transfer test):")
+    for key, entry in output["common_reference_thresholds"]["thresholds"].items():
+        for name in (WINDOW_1, WINDOW_2):
+            print(_row(f"{key} on {name}", entry[name]))
 
 
 def dumps(output: dict) -> str:

@@ -1,6 +1,6 @@
 # FraudGuard
 
-FraudGuard is an educational portfolio project exploring machine learning for financial fraud detection. The project is under development. Phases 1–3 are complete. Phase 4 (model development) is in progress: chronological partitioning (4a) is implemented, two baseline models (4b) have been implemented and evaluated on validation data, and threshold analysis with a temporal stability check (4c) is implemented and approved. A retrospective documentation review of Phases 1–4c is under way.
+FraudGuard is an educational portfolio project exploring machine learning for financial fraud detection. The project is under development. Phases 1–3 are complete. Phase 4 (model development) is complete and mentor-approved: chronological partitioning (4a) is implemented, two baseline models (4b) have been implemented and evaluated on validation data, and threshold analysis with a temporal stability check and a descriptive common-reference threshold comparison (4c) is implemented. Retrospective reports for Phases 1–4 are in `docs/reports/`; the final Phase 4 changes are ready for commit but not yet committed.
 
 ## Business problem
 
@@ -38,12 +38,12 @@ See [docs/TECHNICAL_DOCUMENTATION.md](docs/TECHNICAL_DOCUMENTATION.md) for the c
 1. Project initialization (complete).
 2. Business understanding and dataset exploration (complete).
 3. Data preparation and validation design (complete).
-4. Model development and evaluation (in progress: 4a chronological split, 4b baselines and 4c threshold analysis done).
+4. Model development and evaluation (complete, mentor-approved: 4a chronological split, 4b baselines, 4c threshold analysis).
 5. Results communication and project presentation.
 
 ## Status
 
-**Under development — Phase 4c: Threshold Analysis & Temporal Stability, approved and committed (`cffc32c`). Retrospective documentation of Phases 1–4c is in progress; Phase 5 has not started.**
+**Current status — Phase 4 (Model Development & Evaluation) is complete and mentor-approved (2026-11-08). Its final changes are ready for commit but not yet committed. Phase 5 has not started.**
 
 - **Phase 4b:** a majority-class baseline and a class-weighted Logistic Regression were evaluated on validation data only, under a primary chronological split and a secondary duplicate-aware stratified random split (70/15/15, seed 42).
 - **Phase 4c:** the Logistic Regression's validation scores were analysed across every unique threshold. An F1-maximizing threshold chosen on the first half of validation was then tested, unchanged, on the second half.

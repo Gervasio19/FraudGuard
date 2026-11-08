@@ -106,7 +106,7 @@ The settings are fixed and untuned.
 The metrics fall into two groups:
 
 - **Ranking metrics:** `average_precision` and `roc_auc`, computed from `y_score`, the positive-class probability.
-- **Diagnostic metrics:** `precision`, `recall` and `confusion_matrix`, computed from `y_pred`, the estimator's default `predict()`. That is probability ≥ 0.5 for Logistic Regression, and always the majority class for the majority baseline.
+- **Diagnostic metrics:** `precision`, `recall` and `confusion_matrix`, computed from `y_pred`, the estimator's default `predict()`. That is probability strictly greater than 0.5 for Logistic Regression (scikit-learn's binary `predict` uses decision function > 0), and always the majority class for the majority baseline.
 
 0.5 is not an optimal or production threshold.
 
@@ -158,12 +158,13 @@ Top-level output keys:
 - `full_validation`: `partition_summary`, `selected_threshold`, `metrics`, `threshold_curve`;
 - `temporal_windows`: `boundary_time` (inclusive end of window 1), `window_2_start_time`, the window sizes, and `window_1`/`window_2` analyses;
 - `threshold_transfer`: `transferred_threshold`, `source_selection_f1`, `metrics`, `retrospective_optimum`, and `f1_difference` (transferred − retrospective).
+- `common_reference_thresholds` (added 2026-11-08; descriptive, separate from `threshold_transfer`): `role`, `note`, `decision_rule` (`y_score >= threshold`), `window_prevalence`, and `thresholds` with two entries, `fixed_0_5` and `full_validation_max_f1` (retrospective). Each has `threshold`, `description`, and `window_1`/`window_2` rows in the `evaluate_threshold` format. The rows are computed from the scores already in memory; nothing is refitted or rescored.
 
 ## Adding a dataset
 
 1. Add a `DatasetConfig` with the target, the features or exclusions, and optionally a time column and duplicate-group columns.
 2. Provide partitions. The random split works for any config. A chronological split for a new dataset needs its own documented boundaries, because the `split.py` constants are specific to the credit-card data.
-3. Call `fit_and_evaluate(df, partitions, config, BASELINE_BUILDERS, seed)`. `run_baselines.run` currently wires up the credit-card chronological split.
+3. Call `fit_and_evaluate(df, partitions, config, BASELINE_BUILDERS, seed)`. `run_baselines.run` currently wires up both credit-card experiments: A (chronological split) and B (stratified random split).
 
 Feature columns must be numeric and finite. Categorical encoding and imputation are not implemented.
 
@@ -175,6 +176,6 @@ Feature columns must be numeric and finite. Categorical encoding and imputation 
 | `tests/test_random_split.py` | 23 | Proportions, stratification, duplicate groups, conflicting labels, determinism and row-order independence, input validation, real-data counts for seed 42 |
 | `tests/test_baselines.py` | 38 | Config resolution, train-only scaler fitting, model invariance to validation/test changes, test rows never scored, refusal to evaluate on test, baseline behavior, LR probabilities and reproducibility, hand-checked metrics, compatibility with both splits, end-to-end CLI run, real-data result regression |
 | `tests/test_threshold.py` | 29 | Unique candidates, inclusive `>=` rule, hand-calculated precision/recall/F1/confusion counts, brute-force count check, undefined values, lowest-threshold tie-break, rejection of invalid inputs; window boundary balance, earliest-boundary ties, timestamp integrity, alignment, determinism, invalid timestamps |
-| `tests/test_threshold_analysis.py` | 17 | One fit on train only; one `predict_proba` on validation only; test rows never used; windows partition validation chronologically; Window 1 threshold transferred unchanged and independent of Window 2 labels; transfer metrics recomputed independently; reproducibility; strict JSON with NaN as null; full float precision; end-to-end CLI run; real-data result regression |
+| `tests/test_threshold_analysis.py` | 21 | One fit on train only; one `predict_proba` on validation only; test rows never used; windows partition validation chronologically; Window 1 threshold transferred unchanged and independent of Window 2 labels; transfer metrics recomputed independently; common-reference thresholds (0.5 and full-validation max-F1) recomputed independently per window, with window counts summing to full-validation counts; reproducibility; strict JSON with NaN as null; full float precision; end-to-end CLI run; real-data result regression |
 
 Real-data tests are skipped when `data/raw/creditcard.csv` is absent.

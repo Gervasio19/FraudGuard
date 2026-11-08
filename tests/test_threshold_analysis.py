@@ -140,6 +140,45 @@ class TestProtocol(unittest.TestCase):
         )
         self.assertEqual(self.output["threshold_transfer"]["metrics"], expected)
 
+    def test_common_reference_thresholds_are_fixed_and_full_validation(self):
+        thresholds = self.output["common_reference_thresholds"]["thresholds"]
+        self.assertEqual(set(thresholds), {"fixed_0_5", "full_validation_max_f1"})
+        self.assertEqual(thresholds["fixed_0_5"]["threshold"], 0.5)
+        self.assertEqual(thresholds["full_validation_max_f1"]["threshold"],
+                         self.output["full_validation"]["selected_threshold"])
+        for entry in thresholds.values():
+            for name in (WINDOW_1, WINDOW_2):
+                self.assertEqual(entry[name]["threshold"], entry["threshold"])
+
+    def test_common_reference_metrics_recomputed_independently(self):
+        validation = self.df.loc[(self.partitions == VALIDATION).to_numpy()]
+        scored = fit_and_score(self.df, assign_partitions(self.df), CONFIG, build_logistic_regression, 42)
+        window_labels = split_two_time_windows(validation["Time"]).labels.to_numpy()
+        common = self.output["common_reference_thresholds"]
+        for entry in common["thresholds"].values():
+            for name in (WINDOW_1, WINDOW_2):
+                mask = window_labels == name
+                expected = evaluate_threshold(
+                    validation["Class"].to_numpy()[mask], scored.y_score.to_numpy()[mask], entry["threshold"]
+                )
+                self.assertEqual(entry[name], expected)
+        for name in (WINDOW_1, WINDOW_2):
+            self.assertEqual(common["window_prevalence"][name],
+                             self.output["temporal_windows"][name]["partition_summary"]["prevalence"])
+
+    def test_common_reference_window_counts_sum_to_full_validation(self):
+        validation = self.df.loc[(self.partitions == VALIDATION).to_numpy()]
+        scored = fit_and_score(self.df, assign_partitions(self.df), CONFIG, build_logistic_regression, 42)
+        for entry in self.output["common_reference_thresholds"]["thresholds"].values():
+            full = evaluate_threshold(validation["Class"].to_numpy(), scored.y_score.to_numpy(), entry["threshold"])
+            for count in ("tp", "fp", "fn", "tn"):
+                self.assertEqual(entry[WINDOW_1][count] + entry[WINDOW_2][count], full[count])
+        # The full-validation max-F1 reference reproduces the full-validation optimum's counts.
+        reference = self.output["common_reference_thresholds"]["thresholds"]["full_validation_max_f1"]
+        optimum = self.output["full_validation"]["metrics"]
+        for count in ("tp", "fp", "fn", "tn"):
+            self.assertEqual(reference[WINDOW_1][count] + reference[WINDOW_2][count], optimum[count])
+
 
 class TestIsolation(unittest.TestCase):
     def setUp(self):
@@ -168,7 +207,7 @@ class TestIsolation(unittest.TestCase):
         corrupted.loc[test_mask, FEATURES] = np.nan
         corrupted.loc[test_mask, "Class"] = 1 - corrupted.loc[test_mask, "Class"]
         result = runner.analyse(corrupted, CONFIG, 42)
-        for key in ("full_validation", "temporal_windows", "threshold_transfer", "model"):
+        for key in ("full_validation", "temporal_windows", "threshold_transfer", "common_reference_thresholds", "model"):
             self.assertEqual(result[key], self.baseline[key], key)
 
     def test_results_reproducible(self):
@@ -212,7 +251,7 @@ class TestSerialization(unittest.TestCase):
         self.assertEqual(
             set(parsed),
             {"phase", "dataset", "model", "evaluation_protocol", "environment",
-             "full_validation", "temporal_windows", "threshold_transfer"},
+             "full_validation", "temporal_windows", "threshold_transfer", "common_reference_thresholds"},
         )
         self.assertEqual(parsed["full_validation"]["selection_objective"], "maximize_f1")
         self.assertEqual(parsed["full_validation"]["tie_breaking"], "lowest_threshold")
@@ -253,6 +292,21 @@ class TestThresholdAnalysisOnRealData(unittest.TestCase):
         self.assertEqual((r["tp"], r["fp"], r["fn"], r["tn"]), (24, 1, 9, 21_326))
         # The transfer uses the Window 1 threshold, not the full-validation optimum.
         self.assertNotEqual(tt["transferred_threshold"], self.output["full_validation"]["selected_threshold"])
+
+    def test_documented_common_reference_comparison(self):
+        thresholds = self.output["common_reference_thresholds"]["thresholds"]
+        expected = {
+            ("fixed_0_5", WINDOW_1): (20, 646, 3, 20_693),
+            ("fixed_0_5", WINDOW_2): (32, 611, 1, 20_716),
+            ("full_validation_max_f1", WINDOW_1): (17, 0, 6, 21_339),
+            ("full_validation_max_f1", WINDOW_2): (26, 4, 7, 21_323),
+        }
+        for (key, window), counts in expected.items():
+            m = thresholds[key][window]
+            self.assertEqual((m["tp"], m["fp"], m["fn"], m["tn"]), counts, (key, window))
+        # Window sums reproduce the Phase 4b 0.5-rule confusion matrix (no score equals 0.5 exactly).
+        self.assertEqual(sum(thresholds["fixed_0_5"][w]["tp"] for w in (WINDOW_1, WINDOW_2)), 52)
+        self.assertEqual(sum(thresholds["fixed_0_5"][w]["fp"] for w in (WINDOW_1, WINDOW_2)), 1_257)
 
 
 if __name__ == "__main__":
