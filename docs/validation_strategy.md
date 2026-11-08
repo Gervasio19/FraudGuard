@@ -27,7 +27,17 @@ A stratified random benchmark can preserve the overall class proportions and dis
 - **Future-to-past leakage:** random splits can train on later transactions and evaluate on earlier ones. Use chronological order for the primary estimate.
 - **Timestamp ties:** splitting rows at an arbitrary index can divide transactions with the same timestamp. Choose boundaries on unique `Time` values and document inclusive ranges.
 - **Duplicate leakage:** identical feature vectors in different partitions can expose evaluation examples during training. Group duplicate feature vectors for any non-chronological split.
-- **Preprocessing leakage:** in later phases, fit imputers, scalers, feature selection, resampling, and any learned transformations using training data only; apply the fitted transformations to validation/test. Do not use validation or test outcomes to tune model choices or thresholds.
+- **Preprocessing leakage:** in later phases, fit preprocessing transformations (imputers, scalers, encoders, feature selection, resampling, and other learned preprocessing steps) using training data only; apply the fitted transformations to validation/test.
+- **Probability calibration (updated 2026-11-08 for the approved Phase 5 methodology):** calibration is handled separately from preprocessing.
+  - The calibrator may be fitted on a designated temporal calibration holdout, according to the approved Phase 5 protocol.
+  - The calibration holdout must remain separate from the final test partition.
+  - Test data must not be used to fit or select the calibrator.
+  - Final test evaluation happens only after calibration decisions are frozen.
+  - The exact location and size of the calibration holdout, including whether it lies inside or outside the existing validation partition, are awaiting detailed specification. Until an approved protocol specifies otherwise, the 70/15/15 chronological partitions above are unchanged.
+- **Partition usage policy** (updated 2026-11-08 to match the approved methodology; it replaces an earlier blanket rule against using validation or test outcomes to tune model choices or thresholds):
+  - **Train:** model fitting and training-related operations.
+  - **Validation:** may be used for model selection, hyperparameter tuning, threshold selection and calibration decisions, following the approved Phase 5 protocol. Results selected on validation are development results, not independent performance estimates.
+  - **Test:** reserved for final evaluation, after model selection, threshold selection and calibration decisions are frozen. Test outcomes must not influence later model development or selection.
 - **Label availability and prediction timing:** the dataset does not document when labels become known relative to a transaction decision. Confirm the intended prediction point before modeling and exclude information unavailable at that point if identified.
 
 ## Dataset limitations and decision points
@@ -44,3 +54,16 @@ The Phase 3 validation design is finalized: use the chronological 70/15/15 parti
 ## Implementation note (Phase 4b, configuration approved 2026-11-07)
 
 The secondary benchmark is implemented in `src/data/random_split.py`. Rows are grouped by identical values in every column except `Class`. Groups must have a single label. Within each class, the groups are shuffled with `numpy.random.default_rng(42)` and allocated by cumulative row count to 70/15/15 train/validation/test. On the inspected data, this gives train 199,364 rows (344 frauds), validation 42,722 (74) and test 42,721 (74), with no duplicate group crossing partitions. All original rows are preserved. The design decisions above are unchanged. Results from this split are reported separately from the chronological results (see `docs/WORK_LOG.md`).
+
+## Phase 5 design note (approved design, not implemented; recorded 2026-11-08)
+
+The Phase 5 briefing approved these validation-related decisions. The chronological 70/15/15 partitions above are unchanged.
+
+- A temporal validation and tuning protocol.
+- A validation and test-set usage policy.
+- Window 1 → Window 2 transfer evaluation, using the Phase 4c temporal windows within validation.
+- Model calibration: a temporal calibration holdout has priority, with ensemble investigation as a fallback if needed.
+- Paired bootstrap evaluation for model comparison.
+- For the online review-queue evaluation: temporal-block bootstrap when feasible; otherwise point estimates with sensitivity analysis.
+
+These are planned methods; none is implemented. The temporal-block bootstrap block length and the hyperparameter search space are awaiting detailed specification. The test partition stays untouched until final evaluation. The full list of Phase 5 decisions is in `docs/PROJECT_CONTEXT.md`.

@@ -3,8 +3,9 @@
 ## Verified repository facts
 
 - FraudGuard is an educational credit-card fraud detection project.
-- Current project phase: **Phase 4 — Model Development & Evaluation, mentor-approved (2026-11-08) and ready for commit; the final Phase 4 changes are not yet committed.** Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`, and the Phase 4c specification treats it as a completed prerequisite. **Phase 4c (threshold analysis and temporal stability) is approved and complete, committed and pushed in `cffc32c`.** The retrospective documentation remediation of Phases 1–4 was completed on 2026-11-08: Phase 1 is committed in `0459921`, the Phase 2 report in `9b52a8a`, and the Phase 3 report in `ac178c3` (current `HEAD`, verified 2026-11-08). The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are mentor-approved and ready for commit, but not yet committed. Phase 5 has not started.
-- Documentation: `README.md` (overview and usage), this file (architecture and methodology), `docs/WORK_LOG.md` (chronological history and experiment results), `docs/TECHNICAL_DOCUMENTATION.md` (component reference), and `docs/FINAL_REPORT.md` (pending placeholder). Topic documents: `docs/business_understanding.md` and `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `docs/reports/phase1_foundation.md`; Phase 2: `docs/reports/phase2_data_understanding.md`; Phase 3: `docs/reports/phase3_data_splitting.md`; Phase 4: `docs/reports/phase4_model_development.md`, mentor-approved, not yet committed).
+- Current project phase: **Phase 5 — methodology and design briefing complete; the design decisions are approved (recorded 2026-11-08) but not implemented.** No Phase 5 code, experiments or results exist yet. See "Approved Phase 5 design decisions" below.
+- Phase 4 — Model Development & Evaluation is complete and mentor-approved (2026-11-08). Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`, and the Phase 4c specification treats it as a completed prerequisite. **Phase 4c (threshold analysis and temporal stability) is approved and complete, committed and pushed in `cffc32c`.** The retrospective documentation remediation of Phases 1–4 was completed on 2026-11-08: Phase 1 is committed in `0459921`, the Phase 2 report in `9b52a8a`, and the Phase 3 report in `ac178c3`. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7` (current `HEAD`, verified 2026-11-08).
+- Documentation: `README.md` (overview and usage), this file (architecture and methodology), `docs/WORK_LOG.md` (chronological history and experiment results), `docs/TECHNICAL_DOCUMENTATION.md` (component reference), and `docs/FINAL_REPORT.md` (pending placeholder). Topic documents: `docs/business_understanding.md` and `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `docs/reports/phase1_foundation.md`; Phase 2: `docs/reports/phase2_data_understanding.md`; Phase 3: `docs/reports/phase3_data_splitting.md`; Phase 4: `docs/reports/phase4_model_development.md`, committed in `1f510f7`).
 - Data documentation expects `data/raw/creditcard.csv`. Raw data is ignored by Git and must remain unchanged.
 - Requirements listed in `requirements.txt`: pandas, NumPy, Matplotlib, Seaborn, Jupyter, ipykernel and scikit-learn (1.9.1 installed in the designated environment).
 - Tests run from the repository root with `/Users/duc/Desktop/env/bin/python -m unittest discover -s tests -v`. They use the standard-library `unittest`; pytest is not installed or required.
@@ -36,7 +37,10 @@ Both splits return the same ordered categorical `train`/`validation`/`test` labe
   - *Disclosure:* test fraud counts were known during Phase 3 design. The boundary rule uses only row counts per timestamp, and no model or threshold has been selected on test performance (Phase 3 report, Section 3.4).
 - Secondary benchmark: a stratified random split that keeps duplicate feature groups together. It is reported separately and never pooled with chronological results.
 - No classification threshold is selected. *Refined in Phase 4c (per the mentor's specification):* F1-maximizing thresholds are now selected on validation data as an **analytical evaluation**. No operational or production threshold has been selected; that still requires agreed costs and review capacity.
-- Fit preprocessing on training data only. Do not use validation or test outcomes to select models, thresholds or hyperparameters. The test partition is reserved for final evaluation.
+- **Partition usage policy** (updated 2026-11-08 to match the approved methodology; it replaces an earlier blanket rule against using validation or test outcomes to select models, thresholds or hyperparameters):
+  - **Train:** model fitting and training-related operations. Preprocessing is fitted on training data only.
+  - **Validation:** may be used for model selection, hyperparameter tuning, threshold selection and calibration decisions, following the approved Phase 5 protocol. Results selected on validation are development results, not independent performance estimates.
+  - **Test:** reserved for final evaluation, after model selection, threshold selection and calibration decisions are frozen. Test outcomes must not influence later model development or selection.
 
 ## Approved Phase 4b decisions (mentor approval, 2026-11-07)
 
@@ -65,13 +69,42 @@ Phase 4b results are recorded in `docs/WORK_LOG.md` and `reports/phase4b_baselin
 - **Common-reference comparison (descriptive, approved in the Phase 4c design discussion; implemented 2026-11-08):** a separate experiment from the transfer above. The fixed threshold 0.5 and the full-validation max-F1 threshold are each applied independently to Window 1 and Window 2, using the same scores and the inclusive `>=` rule. The full-validation threshold is retrospective, because it was selected using the labels of both windows. Output key `common_reference_thresholds` in `reports/phase4c_threshold_results.json`.
 - **Interpretation limits:** 56 validation frauds (23 / 33 per window); the dataset covers about 48 hours; balanced-weighted probabilities are uncalibrated and saturate near 1.0; F1 is not a cost function. Results are in `docs/WORK_LOG.md` and `reports/phase4c_threshold_results.json`.
 
+## Approved Phase 5 design decisions (methodology briefing, recorded 2026-11-08)
+
+> **Status: approved design, not implemented.** These items are planned methodology. No Phase 5 code has been written, no Phase 5 experiment has been run, and no Phase 5 result exists. The briefing's full text is not stored in this repository; this section records the approved decisions at the level of detail agreed.
+>
+> **Awaiting detailed specification** (not set; must not be assumed): K values for fixed-K capacity; the definition of time-based review capacity; cost ratios for the cost-sensitive and break-even analysis; the temporal-block bootstrap block length; the hyperparameter search space.
+
+- **Validation design**
+  - A temporal validation and tuning protocol.
+  - A validation and test-set usage policy.
+  - Window 1 → Window 2 transfer evaluation (the Phase 4c temporal windows).
+- **Models**
+  - HistGradientBoosting is the challenger model. The Phase 4 balanced Logistic Regression is the existing baseline.
+- **Calibration**
+  - Model calibration is part of Phase 5.
+  - A temporal calibration holdout has priority. Ensemble investigation is the fallback, if needed.
+- **Statistical comparison**
+  - Paired bootstrap evaluation.
+  - Temporal-block bootstrap for the online queue evaluation, when feasible. Otherwise: point estimates with sensitivity analysis.
+- **Operational evaluation**
+  - Use case: the Analyst Review Queue (see `docs/business_understanding.md`).
+  - Cost-sensitive evaluation with break-even analysis.
+  - Review capacity is evaluated both as fixed-K capacity and as time-based capacity.
+  - Precision@K and Recall@K.
+  - SLA scenarios of 1 hour, 2 hours and 4 hours.
+
+The existing rules still apply: the test partition stays untouched until final evaluation, and the test-partition scope (below) must be acknowledged before it is used. The Phase 1–4 results above are unchanged.
+
 ## Scope and limits
 
 No feature engineering or hyperparameter tuning has been performed. The data covers about 48 hours and has few fraud cases in validation (56 chronological, 74 random) and test. Independent bootstrap confidence intervals (audit computations, seed 0, 2,000 stratified resamples) for the Phase 4b average precision and the Phase 4c threshold transfer are documented in `docs/reports/phase4_model_development.md` (Sections 3.2 and 5.1). `V1`–`V28` are anonymized PCA components. Label availability timing and the intended operational prediction point remain unspecified. The chronological boundaries in `src/data/split.py` are specific to this dataset. **Test-partition scope (to be acknowledged before final test evaluation):** the test set covers only hour values 18–23 (elapsed hour modulo 24, not clock time) of the second day of one approximately 48-hour dataset, with 42,721 transactions, 52 frauds and prevalence 0.1217%. Validation and test contain no hour values 00–11 (Phase 3 report, Sections 4 and 7). Refer to `docs/validation_strategy.md` for detailed design and leakage controls, and `docs/business_understanding.md` for business framing.
 
 ## Handoff state and next task
 
-Phase 4c is approved and committed on branch `main` in `cffc32c`. The 9.5 MB results file `reports/phase4c_threshold_results.json` stays tracked in Git (project-owner decision, 2026-11-08), and Git history is not rewritten. Current task: retrospective documentation remediation of Phases 1–4c, executed incrementally with review between stages. The Phase 3 report (`docs/reports/phase3_data_splitting.md`) awaits mentor review. The Phase 3 audit counts as complete only after that approval. Model-based analyses deferred from Phase 3 belong to the Phase 4 retrospective. A model-input duplicate checker is a recorded future improvement and needs separate approval. No source-code behavior changes are made during documentation recovery unless a correctness issue is found and approved. Do not begin Phase 5, and do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. Threshold selection requires later operational criteria. See `docs/WORK_LOG.md` for details.
+Phase 4 is complete, mentor-approved and committed on branch `main` (Phase 4c in `cffc32c`; completion work and Phase 4 report in `1f510f7`). The 9.5 MB results file `reports/phase4c_threshold_results.json` stays tracked in Git (project-owner decision, 2026-11-08), and Git history is not rewritten. The retrospective documentation remediation of Phases 1–4 is complete. A model-input duplicate checker is a recorded future improvement and needs separate approval.
+
+The Phase 5 methodology and design briefing is complete, and its decisions are recorded above as approved design. **Next task:** Phase 5 implementation, which starts only on explicit approval and proceeds with review between stages. Do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. The Phase 4c thresholds are analytical; no operational threshold has been chosen. See `docs/WORK_LOG.md` for details.
 
 ## Assumptions
 

@@ -2,13 +2,28 @@
 
 ## Current status
 
-- **Current phase:** Phase 4 — Model Development & Evaluation, **mentor-approved (2026-11-08) and ready for commit**; the final Phase 4 changes are not yet committed. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. The retrospective documentation remediation of Phases 1–4 is complete (see the sessions below). The Phase 1, Phase 2 and Phase 3 reports are committed. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are implemented and **mentor-approved**, but not yet committed (session at the top). Phase 5 has not started.
-- **Git state:** branch `main`, `HEAD` `ac178c3` (`docs: add Phase 3 retrospective audit report`), verified 2026-11-08. It contains the Phase 1 remediation (`0459921`), the Phase 2 report (`9b52a8a`) and the Phase 3 report (`ac178c3`). The Phase 4c completion changes from the session below are uncommitted.
-- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`; Phase 4: `phase4_model_development.md`, mentor-approved, not yet committed; created in the sessions below).
+- **Current phase:** Phase 5 — **methodology and design briefing complete; design decisions approved, not implemented** (session at the top). No Phase 5 code, experiments or results exist.
+- **Phase 4:** Model Development & Evaluation, **complete and mentor-approved (2026-11-08)**. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. The retrospective documentation remediation of Phases 1–4 is complete (see the sessions below). The Phase 1, Phase 2 and Phase 3 reports are committed. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7`.
+- **Git state:** branch `main`, `HEAD` `1f510f7` (`Complete Phase 4 model development and evaluation`), verified 2026-11-08. It contains the Phase 1 remediation (`0459921`), the Phase 2 report (`9b52a8a`), the Phase 3 report (`ac178c3`) and the Phase 4 completion (`1f510f7`).
+- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`; Phase 4: `phase4_model_development.md`, committed in `1f510f7`; created in the sessions below).
+
+## Phase 5 methodology and design briefing (2026-11-08)
+
+Scope: documentation housekeeping only. The approved Phase 5 design decisions are recorded in the documentation. Not done: Phase 5 code, experiments, training, tuning, calibration, test-set evaluation, or changes to notebooks, data, models, source, tests, configuration or Phase 1–4 results. No commits or pushes.
+
+- **Status:** the briefing is complete and its decisions are approved as **design**. They are not results, and nothing has been implemented.
+- **Approved decisions** (full list in `docs/PROJECT_CONTEXT.md`, "Approved Phase 5 design decisions"):
+  - Validation: a temporal validation and tuning protocol; a validation and test-set usage policy; Window 1 → Window 2 transfer evaluation.
+  - Models: HistGradientBoosting as the challenger model.
+  - Calibration: a model calibration strategy that prioritizes a temporal calibration holdout, with ensemble investigation as a fallback if needed.
+  - Statistical comparison: paired bootstrap evaluation; temporal-block bootstrap for the online queue evaluation when feasible, otherwise point estimates with sensitivity analysis.
+  - Operational evaluation: the Analyst Review Queue use case; cost-sensitive evaluation with break-even analysis; review capacity as both fixed-K and time-based capacity; Precision@K and Recall@K; SLA scenarios of 1 h, 2 h and 4 h.
+- **Not in the repository:** the briefing's full text and detailed parameters. They will be documented when each item is implemented and reviewed.
+- **Documentation updated:** `README.md`, `docs/PROJECT_CONTEXT.md`, this file, `docs/business_understanding.md`, `docs/validation_strategy.md`. The stale "Phase 4 not yet committed" status was also corrected, because Phase 4 is committed in `1f510f7`.
 
 ## Phase 4b/4c audits and Phase 4c completion (2026-11-08)
 
-Scope: independent read-only audits of Phase 4b (`4b5b94b`) and Phase 4c (`cffc32c`), then the mentor-approved completion items. Not done: model, split, window or transfer changes; retraining; changes to Phase 4b code or artifacts; changes to Phase 3 documentation; refactoring of optional low-priority findings; commits or pushes. **Status: implemented and mentor-approved (2026-11-08) after a final integrated Phase 4 closure audit (PASS WITH MINOR ISSUES; the minor documentation items were fixed in this session). Ready for commit; not yet committed.**
+Scope: independent read-only audits of Phase 4b (`4b5b94b`) and Phase 4c (`cffc32c`), then the mentor-approved completion items. Not done: model, split, window or transfer changes; retraining; changes to Phase 4b code or artifacts; changes to Phase 3 documentation; refactoring of optional low-priority findings; commits or pushes. **Status: implemented and mentor-approved (2026-11-08) after a final integrated Phase 4 closure audit (PASS WITH MINOR ISSUES; the minor documentation items were fixed in this session). Ready for commit; not yet committed.** *Resolved:* committed in `1f510f7`.
 
 - **Audit verdicts:** Phase 4b PASS WITH MINOR ISSUES; Phase 4c PASS WITH MINOR ISSUES. All reported metrics were reproduced independently, and both CLIs regenerated byte-identical results files before any change.
 - **Mentor decisions recorded:**
@@ -344,7 +359,7 @@ The latest Phase 3 commit finalized the validation design and aligned the projec
 ### Unresolved for later project work
 
 - Confirm the intended prediction point and which fields would be available then.
-- Decide operational costs, review capacity, and evaluation criteria before any threshold selection.
+- Decide operational costs, review capacity, and evaluation criteria before any threshold selection. *Phase 5 design (2026-11-08):* the evaluation approach is approved (cost-sensitive evaluation with break-even analysis, fixed-K and time-based capacity, 1/2/4-hour SLA scenarios). No cost values, capacity values or operational threshold have been set.
 - Choose models and preprocessing only after the split is implemented with leakage controls and the Phase 3 boundaries remain fixed.
 
 No blocking implementation errors are known from the completed Phase 3 validation checks. An earlier notebook cell-execution attempt lacked Jupyter's `display` binding; the notebook was corrected, and the full code-cell execution subsequently passed. The default Python environment also lacked pandas; use the designated environment listed under "Verified diagnostics and execution" above.
@@ -372,4 +387,6 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (after the Phase 4 completion work):* mentor review of the Phase 4c completion work and the Phase 4 retrospective report. Both were approved on 2026-11-08 after the final Phase 4 closure audit.
 
-**Current:** commit the approved Phase 4 changes when the project owner gives the go-ahead (they are not yet committed). Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not begin Phase 5, and do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
+*Historical (after the Phase 4 closure audit):* commit the approved Phase 4 changes. Done in `1f510f7`. The Phase 5 methodology and design briefing has since been completed (session at the top).
+
+**Current:** review of the Phase 5 design documentation. Phase 5 implementation starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
