@@ -2,10 +2,26 @@
 
 ## Current status
 
-- **Current phase:** Phase 5 — **methodology and design briefing complete; design decisions approved, not implemented** (session at the top). The design documentation review is complete, and the documentation is committed in `4c463f4`. Phase 5 implementation has not started; no Phase 5 code, experiments or results exist. Next task: Phase 5 experimental protocol preparation.
+- **Current phase:** Phase 5 — **Phase 5A (experimental protocol) approved and closed (2026-11-09)** (session at the top). The frozen protocol is `docs/phase_5a_experimental_protocol.md` (Revision 4 plus closure). The Phase 5 design documentation is committed in `4c463f4`. Phase 5B (implementation) has not started; no Phase 5 code, experiments or results exist. Next task: Phase 5B, only on explicit start.
 - **Phase 4:** Model Development & Evaluation, **complete and mentor-approved (2026-11-08)**. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. The retrospective documentation remediation of Phases 1–4 is complete (see the sessions below). The Phase 1, Phase 2 and Phase 3 reports are committed. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7`.
 - **Key commits on branch `main`** (verified 2026-11-08): the Phase 1 remediation (`0459921`), the Phase 2 report (`9b52a8a`), the Phase 3 report (`ac178c3`), the Phase 4 completion (`1f510f7`, `Complete Phase 4 model development and evaluation`) and the Phase 5 design documentation (`4c463f4`, `docs: finalize approved Phase 5 design documentation`). Use `git log` for the current `HEAD`.
 - **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`; Phase 4: `phase4_model_development.md`, committed in `1f510f7`; created in the sessions below).
+
+## Phase 5A experimental protocol — approved and closed (2026-11-09)
+
+Scope: documentation only. Protocol preparation in four review revisions, then closure. Not done: training, scoring, experiments, threshold tuning, test-label access, or changes to code, data, notebooks, artifacts, requirements or Phase 1–4 documents and results. Phase 5B not started.
+
+- **Deliverable:** `docs/phase_5a_experimental_protocol.md`. Revision 1 is the initial protocol; Revisions 2–4 address the methodology review findings M01–M08, R3-01–R3-05 and R4-01–R4-06. Revision history is in its Appendix B.
+- **Approval:** the project owner approved Revision 4 and all remaining review recommendations on 2026-11-09.
+- **Final decisions** (protocol Section 13.0):
+  - **C-F:** retrospective sensitivity only, never an automatic fallback or primary evidence.
+  - **Near-flat calibrator:** no statistical cutoff. The numerical guard SD(calibrated logits) < 1e-8 is kept, and the calibrator slope and logit dispersion are reported.
+  - **Calibration status:** decided independently for LR and HGB.
+  - **Champion:** LR by default; HGB only if both E1 and E2 pass.
+  - **E2:** needs ≥ 1,000 usable splits of 2,000; otherwise E2 is not estimable and LR remains champion.
+  - **Amount-aware policy:** excluded from the primary decision-policy scope; amount-aware cost accounting is kept as a sensitivity.
+- **Descriptive evidence used:** read-only train/validation statistics only (protocol Appendix A). No test labels were read.
+- **Status:** closed. The protocol is the frozen specification for Phase 5B.
 
 ## Phase 5 methodology and design briefing (2026-11-08)
 
@@ -391,4 +407,6 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (after the Phase 5 briefing):* review of the Phase 5 design documentation. The review is complete, and the documentation is committed in `4c463f4`.
 
-**Current:** Phase 5 experimental protocol preparation. Phase 5 implementation has not started; it starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
+*Historical (after the Phase 5 status sync):* Phase 5 experimental protocol preparation. Done: Phase 5A approved and closed on 2026-11-09 (session at the top).
+
+**Current:** Phase 5B, implementation of `docs/phase_5a_experimental_protocol.md`. Phase 5B has not started; it starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
