@@ -3,7 +3,7 @@
 ## Verified repository facts
 
 - FraudGuard is an educational credit-card fraud detection project.
-- Current project phase: **Phase 5B-0 — protocol and documentation remediation and reproducibility infrastructure, implemented (2026-11-11) and awaiting mentor review.**
+- Current project phase: **Phase 5B-0 — protocol and documentation remediation and reproducibility infrastructure, complete and mentor-approved (2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state.
   - **Phase 5A** (experimental protocol) is approved by the project owner and closed (2026-11-09). The approved protocol is `docs/phase_5a_experimental_protocol.md`, Revision 4 plus closure, committed in `9b6d8e8` (originally `760ccc3`; renamed by the 2026-11-11 attribution rewrite, files identical; see WORK_LOG).
   - Phase 5B-0 adds the implementation clarification addendum (protocol Appendix C), frozen settings, the ranking-score interface, the E2 block and buffer convention, reproducibility tooling and the onboarding documentation. See `docs/reports/PHASE_5B_0_COMPLETION_REPORT.md`.
   - **No Phase 5 model has been fitted or scored, and no Phase 5 experiment or result exists.**
@@ -130,7 +130,7 @@ Phase 4 is complete, mentor-approved and committed on branch `main` (Phase 4c in
 
 The Phase 5 methodology and design briefing is complete, and its decisions are recorded above as approved design. The design documentation is committed in `a84f94a` (originally `4c463f4`). Phase 5A (experimental protocol) is approved and closed (committed in `760ccc3`). *Historical:* the next task recorded here before the protocol was "Phase 5 experimental protocol preparation"; that is done.
 
-**Current state:** Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) is implemented and **awaiting mentor review**. It is not committed: the owner commits after review. **Next task:** Phase 5B-1, the first implementation and experiment stage of the protocol. It starts only on explicit approval and proceeds with review between stages. Seeds, the ranking score (`decision_function`), the E2 buffer convention and the result-storage policy are frozen before it (protocol Appendix C). Do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. The Phase 4c thresholds are analytical; no operational threshold has been chosen. See `docs/WORK_LOG.md` for details.
+**Current state:** Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) is complete and mentor-approved (2026-11-11), committed in `7c4edcd`, with the environment manifest in `aa67802`. **Next task:** Phase 5B-1, the first implementation and experiment stage of the protocol. It starts only on explicit approval and proceeds with review between stages. Seeds, the ranking score (`decision_function`), the E2 buffer convention and the result-storage policy are frozen before it (protocol Appendix C). Do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. The Phase 4c thresholds are analytical; no operational threshold has been chosen. See `docs/WORK_LOG.md` for details.
 
 ## Assumptions
 

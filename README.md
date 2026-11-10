@@ -5,7 +5,7 @@ FraudGuard is an educational portfolio project on machine learning for credit-ca
 **Status (2026-11-11):**
 - Phases 1–4 are complete; Phase 4 (model development and evaluation) is mentor-approved.
 - Phase 5A, the experimental protocol, is approved and closed. The approved protocol is [docs/phase_5a_experimental_protocol.md](docs/phase_5a_experimental_protocol.md) (Revision 4), with implementation clarifications in its Appendix C.
-- **Phase 5B-0** (protocol and documentation remediation, reproducibility infrastructure) is implemented and **awaiting mentor review**.
+- **Phase 5B-0** (protocol and documentation remediation, reproducibility infrastructure) is **complete and mentor-approved** (2026-11-11).
 - No Phase 5 model has been fitted or scored, and no Phase 5 result exists.
 
 Details: [Roadmap](#roadmap) and [docs/WORK_LOG.md](docs/WORK_LOG.md).
@@ -232,7 +232,7 @@ The rules are in [docs/result_storage_policy.md](docs/result_storage_policy.md):
 4. Model development and evaluation (4a chronological split, 4b baselines, 4c threshold analysis): complete, mentor-approved.
 5. Challenger model, calibration, and cost- and capacity-aware evaluation for an Analyst Review Queue:
    - **5A** experimental protocol: approved and closed (2026-11-09).
-   - **5B-0** protocol and documentation remediation, reproducibility infrastructure: implemented, awaiting mentor review.
+   - **5B-0** protocol and documentation remediation, reproducibility infrastructure: complete, mentor-approved (2026-11-11).
    - **5B-1 onward** implementation and experiments: not started; each stage starts only on explicit approval.
 6. Results communication and project presentation: not started.
 

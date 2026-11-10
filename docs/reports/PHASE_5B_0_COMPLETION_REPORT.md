@@ -6,8 +6,11 @@
 | Date | 2026-11-11 |
 | Starting commit | `760ccc3` (`docs: close Phase 5A with approved experimental protocol`); clean working tree at start. After the 2026-11-11 local attribution rewrite this commit is `9b6d8e8`, with an identical tree (Section 16) |
 | Approved methodology | `docs/phase_5a_experimental_protocol.md`, Revision 4 (unchanged); clarifications in its Appendix C |
-| Mentor review | Two rounds on 2026-11-11. First: listed conventions approved, five corrections applied. Final review: remaining implementation conventions approved, subject to final corrections (applied, Section 6.4). Final approval (sign-off) of Phase 5B-0 as a whole is **pending** |
-| Status | Implemented; all mentor corrections applied, including the final rounds; **awaiting the mentor's review; final approval (sign-off) of Phase 5B-0 not yet given**; not committed |
+| Mentor review | Two rounds on 2026-11-11. First: listed conventions approved, five corrections applied. Final review: remaining implementation conventions approved, subject to final corrections (applied, Section 6.4). Final approval (sign-off) of Phase 5B-0 as a whole was pending at that point; **final mentor approval was subsequently reported by the owner (2026-11-11)** |
+| Status | **Complete and mentor-approved; committed** |
+| Implementation commit | `7c4edcdc400b1f4332c7d961f845662f65685ea9` (`Complete Phase 5B-0 methodology and reproducibility foundation`) |
+| Environment manifest commit | `aa67802353f3646e7b5eb53237f3da8e8d263626` (`Record clean Phase 5B-0 environment manifest`); a snapshot generated from the clean tree at `7c4edcd`, `dirty: false` |
+| Push state | Not recorded here, because it changes without a commit; see `git log` / `git status` |
 | Verdict | **COMPLETE WITH CONDITIONS** (Section 15) |
 
 **Evidence labels:** **[V]** verified in this phase (command output, source inspection or test) · **[D]** stated in a committed project document · **[R]** recommendation or interpretation by the implementer.
@@ -91,7 +94,7 @@ Main outcomes:
 | Conventions listed in Section 6.1 | Mentor review, 2026-11-11 | Appendix C3–C5, C7 |
 | Three-column Phase 4 continuity comparison | Mentor review, 2026-11-11 | Appendix C5; settings key `reporting.phase4_continuity_comparison` |
 | Reliability bins [0, 1e-6), [1e-6, 1e-5), …, [0.1, 1.0] (last bin closed) | Mentor final review, 2026-11-11 | Protocol Section 6.5 note; Appendix C8; `RELIABILITY_BIN_EDGES` and `calibration.reliability_bins`; `reliability_bin_index` |
-| Section 6.3 conventions | Mentor final review: implementation conventions approved, subject to the final corrections; phase sign-off pending | Appendix C7 note |
+| Section 6.3 conventions | Mentor final review: implementation conventions approved, subject to the final corrections; phase sign-off pending at the time, final approval later reported by the owner | Appendix C7 note |
 
 ## 5. Protocol clarification details (Appendix C)
 
@@ -150,7 +153,7 @@ Main outcomes:
 
 ### 6.3 Remaining conventions: approved in the final review
 
-These were not individually approved in the first round. In the final review (2026-11-11), the mentor approved them as implementation conventions, **subject to the final corrections in Section 6.4** (Appendix C7). This approval covers the conventions only; **final approval (sign-off) of Phase 5B-0 as a whole is still pending**:
+These were not individually approved in the first round. In the final review (2026-11-11), the mentor approved them as implementation conventions, **subject to the final corrections in Section 6.4** (Appendix C7). This approval covers the conventions only; **final approval (sign-off) of Phase 5B-0 as a whole was still pending at that point** *(it was later given; see the header)*:
 - score negation for a positive label at `classes_[0]`;
 - no `predict_proba` fallback, and the exemption of the majority-class reference;
 - exact float comparison in ranking, with −0.0 equal to 0.0;
@@ -174,7 +177,7 @@ These were not individually approved in the first round. In the final review (20
 | F4 | Section 12.1: decision #12 attributed to the owner's general approval in Section 13.0, not to the six listed final decisions | Section 12.1 note |
 | F5 | Reliability lower-tail bin [0, 1e-6); last bin [0.1, 1.0] closed; full coverage of [0, 1] | Section 6.5 note; Appendix C8; `phase5_settings.py`; `ranking_score.reliability_bin_index`; tests `TestReliabilityBinSettings` (2), `TestReliabilityBins` (6); template and manifest regenerated; new consistency test `test_environment_manifest_matches_current_configuration` for the working-tree manifest's configuration hash |
 | F6 | Appendix C7, WORK_LOG and this report no longer imply that the overall Phase 5B-0 sign-off has happened. Approval of the implementation conventions is kept separate from final approval of the phase | Appendix C7 note and "Who decided what"; WORK_LOG; this report (header, Sections 4, 5, 6.3, 13, 15) |
-| F7 | "Committed" terminology removed from the manifest and template tests; the files are in the working tree and not yet committed: `test_environment_manifest_is_valid`, `test_environment_manifest_matches_current_configuration`, `test_template_file_matches_code` (formerly `test_committed_…`) | `tests/test_reproducibility.py`; this report (Sections 10, 12) |
+| F7 | "Committed" terminology removed from the manifest and template tests; the files were in the working tree and not yet committed at the time (both have since been committed): `test_environment_manifest_is_valid`, `test_environment_manifest_matches_current_configuration`, `test_template_file_matches_code` (formerly `test_committed_…`) | `tests/test_reproducibility.py`; this report (Sections 10, 12) |
 
 ## 7. Score representation investigation and evidence
 
@@ -235,7 +238,7 @@ These were not individually approved in the first round. In the final review (20
   - CPython 3.13.6 on Darwin arm64;
   - numpy 2.3.2, pandas 2.3.1, scikit-learn 1.9.1, scipy 1.17.1, matplotlib 3.10.5, seaborn 0.13.2;
   - ipykernel 7.1.0; joblib 1.6.0; threadpoolctl 3.7.0.
-  - The manifest was regenerated after the mentor corrections. Pre-registered configuration SHA-256 `86ab5adb…` (after the final corrections); regenerated after the local attribution rewrite, so it records Git commit `9b6d8e8` with `dirty: true`, because the work is uncommitted.
+  - The manifest was regenerated after the mentor corrections. Pre-registered configuration SHA-256 `86ab5adb…` (after the final corrections); after the Phase 5B-0 implementation commit it was regenerated from the clean tree. The committed manifest (`aa67802`) records Git commit `7c4edcd` with `dirty: false`. An earlier working-tree version, which recorded `9b6d8e8` with `dirty: true`, is kept in the rewrite backup directory, not in Git.
 
 | Decision | Reason |
 |---|---|
@@ -276,16 +279,16 @@ No Phase 4 module changed, so their last documented passing run (147 OK, Phase 4
 ## 12. Git tracking verification
 
 - **[V]** Nothing is staged.
-- **[V]** `git status` lists only the 10 modified and 15 new files of Section 3.
+- **[V]** Before committing, `git status` listed only the 10 modified and 15 new files of Section 3. They were committed as 24 files in `7c4edcd`, plus the manifest in `aa67802`; the working tree was then clean.
 - **[V]** No dataset, model, array or cache file is untracked-but-unignored.
-- **[V]** The new JSON files (`reports/environment_manifest.json` and the freeze-manifest template) exist in the working tree only. They are **not yet committed**; they become tracked under the storage policy once the owner commits them. They are small, strict and free of absolute paths.
+- **[V]** The new JSON files (`reports/environment_manifest.json` and the freeze-manifest template) are committed: the template in `7c4edcd`, the manifest in `aa67802`. They are tracked under the storage policy, and are small, strict and free of absolute paths.
 
 ## 13. Remaining limitations
 
-1. **Phase sign-off pending.** The mentor approved the Section 6.3 implementation conventions, subject to the final corrections. Those corrections, including F6 and F7, are applied and await the mentor's review. Final approval of Phase 5B-0 as a whole has not been given.
+1. **Phase sign-off:** given. The mentor approved the Section 6.3 implementation conventions subject to the final corrections (F1–F7, applied), and final approval of Phase 5B-0 was then reported by the owner (2026-11-11).
 2. **No mentor sign-off of Revision 4 or of the Phase 5A closure** is recorded; only the owner's approval is. The mentor's Phase 5B-0 review is recorded in Appendix C7.
 3. **Fresh-clone scope:** same macOS arm64 machine and Python build. Linux and Windows instructions and the Kaggle download were not executed.
-4. **The environment manifest exists only in the working tree** and records the pre-commit state (`9b6d8e8`, dirty). It is not yet committed. Regenerate it after the Phase 5B-0 commit, then commit it.
+4. **The environment manifest is a snapshot of `7c4edcd`** (committed in `aa67802`, `dirty: false`). By design it records the commit it was generated from, not later commits. It is regenerated only when the environment, the dataset or the pre-registered configuration changes.
 5. **The E2 usable-split count is unknown.** It needs validation labels; this is a 5B-1 step.
 6. **Cross-analysis RNG streams are not independent** (by design). Monte Carlo errors at the 10/15/30-min block lengths are correlated, which is reported, not corrected.
 7. **The `score_representation` field is not yet enforced** in Phase 5 result files. It is a 5B-1 writer requirement.
@@ -317,15 +320,15 @@ The split, the raw data, the Phase 4 artifacts and the Revision 4 decisions are 
 
 **Verdict: COMPLETE WITH CONDITIONS.** Every acceptance criterion and every mentor correction is met, with the limitations of Section 13. **[R]** Before Phase 5B-1:
 
-1. The mentor reviews the final corrections and gives the overall Phase 5B-0 sign-off.
-2. The owner commits Phase 5B-0, then regenerates and commits `reports/environment_manifest.json` (`dirty: false`).
+1. ~~The mentor reviews the final corrections and gives the overall Phase 5B-0 sign-off.~~ Done (2026-11-11).
+2. ~~The owner commits Phase 5B-0, then regenerates and commits `reports/environment_manifest.json` (`dirty: false`).~~ Done: `7c4edcd` and `aa67802`.
 3. The first Phase 5B-1 actions, each subject to approval:
    - (a) the full 241-test suite (it refits the Phase 4 LR, a reproduction);
    - (b) the label-only E2 usable-split count with seed 42;
    - (c) the `T_fit`/`T_cal` sub-partition helper with a timestamp-integrity test;
    - (d) a result writer that requires `score_representation`.
 
-## 16. Local Git attribution rewrite (owner-approved, 2026-11-11; not pushed)
+## 16. Git attribution rewrite (owner-approved, 2026-11-11; pushed 2026-11-11)
 
 Two pushed commits carried `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. With owner approval, the three affected commits were rewritten **locally**. Each file tree is identical **[V]**. Author, committer and timestamps are unchanged **[V]**. Only the trailer was removed **[V]**.
 
@@ -335,7 +338,7 @@ Two pushed commits carried `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.c
 | `7f3387a` | `c349f04` |
 | `760ccc3` | `9b6d8e8` (re-parented only) |
 
-- References in this report and in the other uncommitted Phase 5B-0 documents now use the new IDs. Where an action used the old object, the old ID is kept next to the new one.
-- `reports/environment_manifest.json` was regenerated, so it records `9b6d8e8`.
+- References in this report and in the other Phase 5B-0 documents now use the new IDs. Where an action used the old object, the old ID is kept next to the new one.
+- `reports/environment_manifest.json` was later regenerated from the clean tree after the implementation commit. It records `7c4edcd` (`dirty: false`) and is committed in `aa67802`.
 - Backups and the full mapping are in `docs/WORK_LOG.md` ("Local Git attribution rewrite").
-- **Not pushed:** `origin/main` still points to `760ccc3` until the owner approves a `--force-with-lease` push.
+- **Pushed (2026-11-11):** after mentor review, `main` was pushed with `--force-with-lease` from `760ccc3` to `9b6d8e8`; the remote history has no Claude trailer.
