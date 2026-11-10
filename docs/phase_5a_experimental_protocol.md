@@ -1,6 +1,6 @@
 # Phase 5A — Experimental Protocol (Preparation Only)
 
-> **Status: APPROVED — Phase 5A officially closed (2026-11-09).** The project owner approved Revision 4 together with all remaining recommendations and decisions of the methodology review. The final decisions are recorded in Section 13.0 and Appendix B. This document is the frozen experimental protocol for Phase 5B. Phase 5B (implementation) has **not** started; it is a separate phase and requires its own explicit start. *History:* proposal for mentor review, prepared 2026-11-09. **Revision 2 (2026-11-09)** addresses methodology review findings M01–M08. **Revision 3 (2026-11-09)** applies targeted corrections R3-01–R3-05. **Revision 4 (2026-11-09)** applies targeted corrections R4-01–R4-06. See Appendix B for the revision log. No revision is approved; approval is recorded only by the human reviewer. **Nothing in this document is a result.** No model was trained, no experiment was run, no threshold was tuned, and no test-partition label was read while preparing it. All numeric values in this document are of three kinds: (a) repository facts, (b) descriptive counts computed on the train and validation partitions with pandas, and (c) explicitly hypothetical scenario parameters. Exact Poisson intervals for known fraud counts (Section 6.5) are arithmetic only. Phase 5B (implementation) starts only after explicit approval.
+> **Status: APPROVED — Phase 5A officially closed (2026-11-09).** The project owner approved Revision 4 together with all remaining recommendations and decisions of the methodology review. The final decisions are recorded in Section 13.0 and Appendix B. This document is the frozen experimental protocol for Phase 5B. Phase 5B (implementation) has **not** started; it is a separate phase and requires its own explicit start. **Phase 5B-0 (2026-11-11):** implementation clarifications are recorded in **Appendix C** (an editorial and implementation addendum, not a revision; the scientific design is unchanged). Sentences below that were written before approval are kept as history and resolved in Appendix C, item C1. *History:* proposal for mentor review, prepared 2026-11-09. **Revision 2 (2026-11-09)** addresses methodology review findings M01–M08. **Revision 3 (2026-11-09)** applies targeted corrections R3-01–R3-05. **Revision 4 (2026-11-09)** applies targeted corrections R4-01–R4-06. See Appendix B for the revision log. No revision is approved; approval is recorded only by the human reviewer. *(Pre-closure wording, superseded by the approval above; Appendix C, item C1.)* **Nothing in this document is a result.** No model was trained, no experiment was run, no threshold was tuned, and no test-partition label was read while preparing it. All numeric values in this document are of three kinds: (a) repository facts, (b) descriptive counts computed on the train and validation partitions with pandas, and (c) explicitly hypothetical scenario parameters. Exact Poisson intervals for known fraud counts (Section 6.5) are arithmetic only. Phase 5B (implementation) starts only after explicit approval.
 
 **Evidence labels**
 
@@ -8,7 +8,7 @@
 |---|---|
 | **[V]** | Verified directly from code, data or artifacts. This includes descriptive statistics computed during this preparation (Appendix A): read-only, no model fitting, train and validation labels only |
 | **[D]** | Documented in a committed repository document |
-| **[R]** | Recommendation or interpretation by the protocol author; requires mentor approval |
+| **[R]** | Recommendation or interpretation by the protocol author; requires mentor approval. *(Pre-closure wording. All Revision 4 recommendations were approved by the project owner at closure, Section 13.0; Appendix C, item C1.)* |
 | **[H]** | Hypothetical parameter (a scenario value, not a fact about any real operation) |
 
 ---
@@ -208,7 +208,7 @@ Report the Phase 4 configuration (C=1, balanced LR) fitted on `T_fit` beside the
 
 - **Primary model-quality metric:** average precision on validation (uncalibrated scores). AP is the project's established ranking metric. It is threshold-free and focused on the rare class.
 - **Secondary:** ROC-AUC (context only), Precision@K, Recall@K, calibration metrics (Section 6.5), and cost and queue metrics (Sections 8–9).
-- **Calibration does not change AP** when the map is strictly increasing (sigmoid with positive slope). AP is therefore computed on uncalibrated scores to avoid ties. Isotonic regression creates ties and can change AP, which is another reason it is not the primary method.
+- **Calibration does not change AP** when the map is strictly increasing (sigmoid with positive slope). AP is therefore computed on uncalibrated scores to avoid ties. *(Phase 5B-0: "uncalibrated score" means `decision_function`, not `predict_proba`, because `predict_proba` itself saturates and creates ties; Appendix C, item C5.)* Isotonic regression creates ties and can change AP, which is another reason it is not the primary method.
 
 ---
 
@@ -282,7 +282,7 @@ Note on how the size was chosen: the row-fraction options were enumerated first,
 
 - **Sigmoid (Platt) calibration** on the selected model's `T_cal` scores. Two parameters suit 28 positives. Isotonic regression is non-parametric, overfits with this few positives and introduces score ties. Isotonic is reported as a *sensitivity only* (calibration metrics, not AP).
 - Implementation: `CalibratedClassifierCV(FrozenEstimator(fitted_pipeline), method="sigmoid")` fitted on `T_cal`. `FrozenEstimator` is available in 1.9.1 **[V]**; it keeps the model from being refitted. An equivalent is a 1-D logistic regression on the logit (LR) or raw score (HGB).
-- **Input scale:** for LR the decision-function logit is natural. HGB's `decision_function` is also a log-odds. The same procedure is used for both models.
+- **Input scale:** for LR the decision-function logit is natural. HGB's `decision_function` is also a log-odds. The same procedure is used for both models. *(Phase 5B-0: `decision_function` is fixed as the single ranking, evaluation and calibrator-input score for both models; Appendix C, item C5.)*
 - **Guard:** the fitted slope must be positive. Otherwise the calibrator would reverse the ranking. A non-positive slope is a technical failure (Section 6.4).
 
 ### 6.4 Technical-failure rule: uncalibrated scores as the safe alternative [R]
@@ -305,7 +305,7 @@ The earlier "all calibrated p in a single reliability bin" criterion is withdraw
 
 **C-F is not an automatic fallback.** It is retained only as an optional, retrospective ensemble investigation, run on explicit mentor request and reported as a sensitivity. It is never primary evidence (Section 6.7).
 
-*Note:* the approved Phase 5 design lists "ensemble investigation as the fallback, if needed" **[D]**. This revision keeps the investigation but removes its automatic role, because Section 6.7 shows it is not statistically defensible as a drop-in replacement. The change needs mentor confirmation (decision #1b).
+*Note:* the approved Phase 5 design lists "ensemble investigation as the fallback, if needed" **[D]**. This revision keeps the investigation but removes its automatic role, because Section 6.7 shows it is not statistically defensible as a drop-in replacement. The change needs mentor confirmation (decision #1b). *(Resolved at closure, Section 13.0: C-F is retrospective sensitivity only and never a fallback; Appendix C, item C1.)*
 
 ### 6.5 Calibration evaluation and its uncertainty (validation; then test at the end) [R]
 
@@ -317,8 +317,8 @@ All calibration figures are reported **with uncertainty** and with the number of
 | **Calibration intercept** (logistic regression of y on offset logit(p̂), slope fixed at 1) | a | Profile-likelihood 95% CI, plus the block-bootstrap CI |
 | **Calibration slope** (logistic regression of y on logit(p̂)) | b | Profile-likelihood 95% CI, plus the block-bootstrap CI. With 56 events the slope CI is expected to be wide. A slope CI containing 1 is "no evidence of miscalibrated spread", not proof of good calibration |
 | **Brier score, Brier skill vs constant prevalence, log loss** | value | Block-bootstrap CI. A paired CI for the LR–HGB difference |
-| **Reliability table** | per bin: rows, observed frauds, Σp, observed rate | Clopper–Pearson 95% CI per bin. Two kinds of edges, with different timing (R4-06): (i) **decade edges** of predicted probability (10⁻⁶, 10⁻⁵, …, 10⁻¹, 1) are data-independent and pre-registered in this protocol; (ii) **K-derived edges**, the score of the K-th ranked row for each K in the frozen grid under the Section 9.2 key, can only be computed *after* the model scores that partition. They are computed from scores alone, without labels, and frozen in the manifest **before** that partition's labels are joined to evaluate any calibration metric. Bins with fewer than 5 observed or 5 expected frauds are flagged "not interpretable" and never summarized into a single number |
-| **Calibrator parameter uncertainty** | sigmoid (A, B) fitted on `T_cal` | Block bootstrap of `T_cal` (CBB, 15-min blocks, ≈ 23 blocks over 5.66 h, B = 2,000, seed recorded) refitting only the 2-parameter sigmoid. Failure handling is pre-registered below. Propagated to the rank position of each Bayes threshold p\* = 1/R on validation, to show how many alerts the threshold uncertainty moves. Descriptive only |
+| **Reliability table** | per bin: rows, observed frauds, Σp, observed rate | Clopper–Pearson 95% CI per bin. Two kinds of edges, with different timing (R4-06): (i) **decade edges** of predicted probability (10⁻⁶, 10⁻⁵, …, 10⁻¹, 1) are data-independent and pre-registered in this protocol *(Phase 5B-0, Appendix C8: a lower-tail bin is added, so the decade bins are [0, 10⁻⁶), [10⁻⁶, 10⁻⁵), …, [10⁻², 10⁻¹), [10⁻¹, 1]. Every bin is half-open except the last, which is closed so that p = 1 is included; together they cover [0, 1])*; (ii) **K-derived edges**, the score of the K-th ranked row for each K in the frozen grid under the Section 9.2 key, can only be computed *after* the model scores that partition. They are computed from scores alone, without labels, and frozen in the manifest **before** that partition's labels are joined to evaluate any calibration metric. Bins with fewer than 5 observed or 5 expected frauds are flagged "not interpretable" and never summarized into a single number |
+| **Calibrator parameter uncertainty** | sigmoid (A, B) fitted on `T_cal` | Block bootstrap of `T_cal` (CBB, 15-min blocks, ≈ 23 blocks over 5.66 h, B = 2,000, seed recorded; *seed frozen at 42, Appendix C, item C3*) refitting only the 2-parameter sigmoid. Failure handling is pre-registered below. Propagated to the rank position of each Bayes threshold p\* = 1/R on validation, to show how many alerts the threshold uncertainty moves. Descriptive only |
 | **Isotonic sensitivity** | same metrics | Same uncertainty reporting. Pre-registered as a sensitivity only |
 
 **Bootstrap validity rules (pre-registered implementation rules; R3-04, revised by R4-02).** Two different bootstraps are involved. They get **different** validity rules, because one *fits a calibrator* and the other *evaluates* calibration.
@@ -337,7 +337,7 @@ All calibration figures are reported **with uncertainty** and with the number of
 *Why this degeneracy criterion, and why it is pre-registered without inspecting results:*
 - It is measured on the **logit** scale. Calibrated fraud probabilities are legitimately tiny and tightly concentrated, so on the probability scale (or in decade bins) a varying output can look constant; on the logit scale it does not.
 - The cutoff 1e-8 is a **floating-point guard**, not a statistical judgment. Double precision resolves about 1e-16 relative to logits of order 1–10, so 1e-8 sits about eight orders above rounding noise. It is also about eight orders below any spread that could carry ranking or calibration information. It flags only outputs that are constant for all practical purposes.
-- It deliberately does **not** flag "statistically flat but varying" calibrators (for example, a logit spread of 0.05). Any such near-flatness cutoff would be a substantive choice that cannot be justified without seeing results. It is left as **unresolved decision #1d**, and until the mentor sets one, no near-flatness exclusion is applied.
+- It deliberately does **not** flag "statistically flat but varying" calibrators (for example, a logit spread of 0.05). Any such near-flatness cutoff would be a substantive choice that cannot be justified without seeing results. It is left as **unresolved decision #1d**, and until the mentor sets one, no near-flatness exclusion is applied. *(Resolved at closure, Section 13.0: no near-flatness cutoff; the 1e-8 guard is kept and the slope and logit SD are reported. Appendix C, item C1.)*
 - The same criterion defines "numerically constant output" for the primary C-A calibrator (Section 6.4).
 
 Rules for (A):
@@ -518,7 +518,7 @@ With ~11–24 effective units, block-bootstrap variance estimates are known to b
 
 **Why not a classic out-of-bag bootstrap.** With 21 effective 15-min blocks, a bootstrap draw leaves about (1 − 1/20.4)²¹ ≈ 36% of the period uncovered. A dependence buffer of one block length on each side of every drawn block shrinks the out-of-bag share to about (1 − 3/20.4)²¹ ≈ 4%, i.e. ~2 frauds, which is unusable. A split-sample design over non-overlapping blocks keeps a usable held-out set.
 
-**Procedure (B = 2,000 random splits, seed recorded):**
+**Procedure (B = 2,000 random splits, seed recorded; *seed frozen at 42 and the buffer convention fixed in Appendix C, items C3 and C4*):**
 1. Partition validation into its 21 non-overlapping 15-min blocks, aligned to the validation start. The final block is partial.
 2. In each split b, assign 10 blocks at random to a **selection half** and the other 11 to a **held-out half**. There are C(21, 10) = 352,716 possible splits, so 2,000 random splits are nearly all distinct.
 3. **Buffer:** drop held-out rows within **5 min** of a selection-half block. 5 min exceeds validation's P90 burst duration (4.6 min **[V]**) and limits leakage of a burst across the cut. Expected held-out share after the buffer: about a third of validation, i.e. roughly 15–20 frauds.
@@ -627,7 +627,7 @@ p_i · L_i ≥ c_r     ⇔     p_i ≥ t_i = c_r / (α + λ · Amount_i)      (w
 | Break-even | R > 1/Precision | Σ_{TP} L_i ≥ c_r · (TP + FP) for the reviewed set |
 
 **Assumptions (each stated with the results):**
-1. p_i is calibrated **conditionally on Amount**, not only on average. Sigmoid calibration on `T_cal` guarantees neither; miscalibration that varies by amount band biases the rule. 5B reports calibration by amount tercile (descriptive, with the uncertainty rules of Section 6.5).
+1. p_i is calibrated **conditionally on Amount**, not only on average. Sigmoid calibration on `T_cal` guarantees neither; miscalibration that varies by amount band biases the rule. 5B reports calibration by amount tercile (descriptive, with the uncertainty rules of Section 6.5). *(Not required in Phase 5B: this assumption belongs to the amount-aware decision policy, which is excluded (decision #9). Appendix C, item C2.)*
 2. A review, when performed, prevents the whole loss L_i (100% efficacy), and reviews are instantaneous within the SLA.
 3. c_r is the same for every review, whatever the amount.
 4. Losses are additive and independent across transactions. Card-level follow-on fraud is not modelled; there is no card identifier **[D]**.
@@ -635,7 +635,7 @@ p_i · L_i ≥ c_r     ⇔     p_i ≥ t_i = c_r / (α + λ · Amount_i)      (w
 
 **Two distinct uses (kept separate):**
 - **(a) Amount-aware cost accounting** of the primary, score-ranked policies (fixed-K, queue, empirical thresholds): evaluate Σ L_i over missed frauds plus c_r × alerts. This needs no calibration and is always reported as a sensitivity.
-- **(b) Amount-aware decision policy** (the transaction-specific Bayes rule, or ranking by p_i · L_i): this needs calibration and is a different policy. It is **optional** and outside the approved scope list; it is evaluated only if the mentor approves it (decision #9). If C-A fails technically (Section 6.4), (b) is "not available".
+- **(b) Amount-aware decision policy** (the transaction-specific Bayes rule, or ranking by p_i · L_i): this needs calibration and is a different policy. It is **optional** and outside the approved scope list; it is evaluated only if the mentor approves it (decision #9). *(Resolved at closure, Section 13.0: excluded from the primary decision-policy scope; (a) is kept.)* If C-A fails technically (Section 6.4), (b) is "not available".
 
 **Scenarios [H]:** c_r ∈ {1, 5, 10} Amount units, α ∈ {0, 20} Amount units, λ = 1. That gives 6 scenarios, all hypothetical, in "Amount units" (no currency).
 - **Why α matters:** with α = 0, a zero-amount fraud costs nothing, yet 7 of 56 validation frauds have Amount 0 and 20 have Amount ≤ 1. Small frauds may be card testing that precedes larger losses. That is a *hypothesis*; no card identifier exists to test it **[D]**. α keeps those frauds from being valued at zero.
@@ -796,7 +796,7 @@ The W2 labels are used **only** to measure. A test (as in Phase 4c **[D]**) conf
 | Fixed-K | P@K, R@K, fraud value captured@K (+ leave-largest-out), alerts/hour, FP per TP, analyst-hours **[H]**; boundary-tie report (n tied, inside/outside, [TP_min, TP_max], expected TP) | validation, windows (scaled K), test |
 | Time-based queue | recall within SLA, precision, value captured, mean/P90 delay, expired, censored, idle slots, peak backlog (event ordering of Section 9.3) | validation, W2, test |
 | Cost | cost/hour per R, break-even R (1/Precision and ΔAlerts/ΔTP), no-review and oracle references | validation, W2, test |
-| Calibration | O/E with exact Poisson and block-bootstrap CIs; intercept and slope with profile-likelihood and block-bootstrap CIs; Brier, Brier skill and log loss with CIs; reliability table with Clopper–Pearson CIs on pre-fixed bins; calibrator-parameter bootstrap; isotonic sensitivity; calibration by amount tercile (if the amount-aware policy is approved) | `T_cal` (in-sample, labelled as such), validation, W1, W2, test |
+| Calibration | O/E with exact Poisson and block-bootstrap CIs; intercept and slope with profile-likelihood and block-bootstrap CIs; Brier, Brier skill and log loss with CIs; reliability table with Clopper–Pearson CIs on pre-fixed bins; calibrator-parameter bootstrap; isotonic sensitivity; calibration by amount tercile (if the amount-aware policy is approved; *it is not, so not computed: Appendix C, item C2*) | `T_cal` (in-sample, labelled as such), validation, W1, W2, test |
 | Uncertainty (conditional) | paired block-bootstrap CI for CBB at 5/10/15/30 min, with MBB and stationary sensitivities and the centring bias; block-jackknife SE; i.i.d. continuity CI | validation, test |
 | Uncertainty (selection-aware) | attempted / skipped / usable split counts (always); and, only if ≥ 1,000 splits are usable (otherwise "not estimable under the pre-registered rule"): selection frequencies, held-out ΔAP distribution and median, held-out split-stability frequency (a descriptive stability statistic, not a probability or confidence level); reference-adjusted optimism indicator (heuristic, shown with the unadjusted term) (Section 7.5); replay Q3 ranges (Section 10.3, diagnostic only) | validation; W1 → W2 |
 | Bootstrap validity | (A) calibrator-fit bootstrap: invalid counts by category (no positives, fit failure, non-positive slope, numerically constant output) plus low-positive count and valid share; (B) calibration-evaluation bootstrap: per fitted metric (intercept, slope), failure counts and valid share, share of replicates with slope ≤ 0 (kept as results), and undefined Brier-skill count. A "not estimable" statement wherever a 90% requirement fails (Section 6.5) | `T_cal`, validation, test |
@@ -831,7 +831,7 @@ Reported: AP and the conditional paired block-bootstrap ΔAP (CBB at 10/15/30 mi
 
 | Risk | Control |
 |---|---|
-| Test use before freeze | Keep the existing guard (`_prepare` refuses `test`). The final scoring uses a *separate* entry point that requires a committed freeze manifest and refuses to run without it. That code change needs approval (Section 13) |
+| Test use before freeze | Keep the existing guard (`_prepare` refuses `test`). The final scoring uses a *separate* entry point that requires a committed freeze manifest and refuses to run without it. That code change needs approval (Section 13) *(covered by the project owner's general approval of the remaining Revision 4 recommendations in Section 13.0, which includes decision #12; #12 is not one of the six individually listed final decisions. The freeze-manifest template is in Appendix C, item C6)* |
 | Calibrator sees validation or test | The calibrator is fitted on `T_cal` scores only. A unit test checks the calibrator's training indices ⊆ `T_cal` |
 | Preprocessing leakage | The scaler stays inside the pipeline, fitted on `T_fit` (not all of train) |
 | Hidden random split inside HGB | `early_stopping=False` set explicitly **[V]** |
@@ -849,7 +849,7 @@ Reported: AP and the conditional paired block-bootstrap ΔAP (CBB at 10/15/30 mi
 
 ### 12.2 Reproducibility [R]
 
-- Seeds: model `random_state=42`; bootstrap `default_rng(0)`; both recorded.
+- Seeds: model `random_state=42`; bootstrap `default_rng(0)`; both recorded. *(Phase 5B-0: the E2 split seed and the `T_cal` calibrator-bootstrap seed are frozen at 42; every other bootstrap keeps `default_rng(0)`. Appendix C, item C3.)*
 - Pinned environment versions written into every JSON. Data SHA-256 checked at start, and the run aborts on a mismatch.
 - HGB determinism verified (two fits, identical scores) before the grid runs.
 - Scores computed once and cached in memory. Every analysis reads the same arrays, as in Phase 4c **[V]**.
@@ -895,7 +895,7 @@ All other Revision 4 recommendations remain unchanged and approved. The table be
 | 1 | Calibration holdout | C-A: last 20% of train (`Time` ≥ 112,555; 28 frauds), sigmoid | C-B 10%/15%; C-C 25% (night hours) |
 | 1b | Role of C-F and the safe alternative (*revised in rev. 2 and 3*) | Uncalibrated scores on a C-A technical failure. C-F is not automatic: an optional **retrospective, not fully prequential** sensitivity (variant (a)), only on request, never primary evidence. Confirms a change to the approved "ensemble fallback" wording | Keep C-F as an automatic fallback (not recommended, Section 6.7); drop C-F entirely. Nested hyperparameter selection inside folds is out of scope |
 | 1c | Bootstrap validity rules (*new in rev. 3; split and revised in rev. 4*) | **(A) Calibrator-fit bootstrap:** invalid = zero frauds, fit failure or non-convergence or non-finite parameters, slope ≤ 0, numerically constant logits (SD < 1e-8, a floating-point guard); low-positive (1–4) kept but flagged; ≥ 90% valid (≥ 1,800 of 2,000), otherwise "not estimable" with no interval and no retry. **(B) Calibration-evaluation bootstrap:** only the intercept and slope refits can fail (zero frauds, fit failure, non-finite estimate); a negative slope is a kept result; O/E, Brier and log loss have no fit rule; Brier skill is undefined with zero frauds; 90% per fitted metric. The same numerical-constancy criterion applies to the primary calibrator (Section 6.4) | Another minimum (e.g. 80% or 95%); also exclude low-positive (1–4 frauds) replicates; a different floating-point tolerance (e.g. 1e-10) |
-| 1d | Statistical near-flatness criterion for a fitted calibrator (*new in rev. 4; unresolved*) | **None applied** unless the mentor sets one before implementation. Only numerical constancy (#1c) is excluded | A logit-SD floor (e.g. 0.05 or 0.1) or a minimum calibrated-probability range. Any value must be fixed before scoring and justified without results |
+| 1d | Statistical near-flatness criterion for a fitted calibrator (*new in rev. 4; unresolved at writing; resolved at closure, Section 13.0: none*) | **None applied** unless the mentor sets one before implementation. Only numerical constancy (#1c) is excluded | A logit-SD floor (e.g. 0.05 or 0.1) or a minimum calibrated-probability range. Any value must be fixed before scoring and justified without results |
 | 1e | Calibration status per model (*new in rev. 4*) | Decided independently for LR and HGB; the affected model alone loses probability-based outputs; rank-based outputs unaffected | Force both models uncalibrated if either fails (not recommended: it discards a valid calibrator for no ranking benefit) |
 | 2 | Accept the train reduction and the 5.66 h gap (Phase 4 numbers not directly reproduced) | Accept; report the C=1 balanced LR on `T_fit` vs Phase 4b | Refit on all train for test (rejected: no holdout would be left for the calibrator) |
 | 3 | Champion rule (*revised in rev. 3: E3 removed*) | Incumbent by default; HGB only if **E1** (conditional CI lower bound > 0 at 10/15/30 min) **and E2** (held-out split-stability frequency ≥ 90% and median held-out ΔAP > 0). The W1 → W2 replay is a separate diagnostic and never a gate | Conditional-CI-only rule (biased toward the larger grid); E2 convention of 80% or 95%; Options 2 and 3 (Section 4.3). Reinstating a W2-based gate is **not recommended**: it would make W2 part of champion selection |
@@ -935,7 +935,7 @@ All other Revision 4 recommendations remain unchanged and approved. The table be
 13. **CBB wrap artefact:** 4.9–9.8% of blocks join the end of validation to its start, across a prevalence change. Monitored through the MBB/stationary sensitivities and the centring bias.
 14. **Tie sensitivity of HGB at fixed K:** piecewise-constant scores may produce boundary ties where TP_min ≠ TP_max, making P@K and R@K partly order-dependent. Reported as ranges.
 15. **Conditional-calibration assumption in the amount-aware rule:** a sigmoid fitted on 28 positives cannot guarantee calibration by amount band. Mis-calibration there directly biases the transaction-specific thresholds.
-16. **Deviation from approved wording:** demoting C-F from "fallback" to "optional investigation" changes an approved design item and needs explicit mentor confirmation (decision #1b).
+16. **Deviation from approved wording:** demoting C-F from "fallback" to "optional investigation" changes an approved design item and needs explicit mentor confirmation (decision #1b). *(Resolved at closure, Section 13.0.)*
 
 **New or revised risks identified in revision 3 [R]**
 
@@ -949,7 +949,7 @@ All other Revision 4 recommendations remain unchanged and approved. The table be
 **New risks identified in revision 4 [R]**
 
 23. **E2 not estimable:** bursts can leave many held-out halves with fewer than 10 frauds. If fewer than 1,000 of 2,000 splits are usable, E2 cannot pass and the LR is retained by rule, so the champion decision may turn on resampling feasibility rather than on model evidence. The report must say so explicitly.
-24. **No statistical flatness guard:** only numerically constant calibrators are excluded. A calibrator that is nearly flat but varying (decision #1d, unresolved) passes and yields probabilities with little spread. It is visible in the reported calibrator slope and logit spread, but it is not excluded.
+24. **No statistical flatness guard:** only numerically constant calibrators are excluded. A calibrator that is nearly flat but varying (decision #1d, unresolved at writing; resolved at closure: no cutoff) passes and yields probabilities with little spread. It is visible in the reported calibrator slope and logit spread, but it is not excluded.
 25. **Mixed calibration status:** if only one model's calibrator passes, the probability-based comparisons between the models are unavailable, and the cost-threshold analyses cover one model only. The champion decision is unaffected, because it is rank-based.
 26. **Queue-convention sensitivity:** results depend on the pre-registered event-ordering conventions (first slot at t₀ + Δ, inclusive SLA boundary, lost idle capacity). Other defensible conventions would shift recall and delay slightly, especially at c = 5 and SLA 1 h. The conventions are fixed in advance and not tuned.
 
@@ -1013,3 +1013,187 @@ Decisions preserved unchanged from revision 3: everything not listed above, incl
 **Phase 5A closure — 2026-11-09.** The project owner approved Revision 4 and all remaining review recommendations, and Phase 5A is closed. No methodology was changed at closure. Changes made: the approval status in the header; the final decisions recorded in Section 13.0; the editorial typo "Reported: Reported:" in Section 11.3 corrected. No model was trained or scored, and no test label was accessed. Phase 5B has not started.
 
 **Revision 1 — 2026-11-09.** Initial protocol.
+
+## Appendix C. Implementation clarification addendum (Phase 5B-0, 2026-11-11)
+
+**What this addendum is.** An editorial and implementation clarification of the approved Revision 4. It is **not** a Revision 5. It does **not** change the scientific design: partitions, candidates, grids, selection rule, calibration method and holdout, validity rules, bootstrap design, E1/E2 champion rule, operational grids, replay design and test policy are all unchanged. It fixes details that Revision 4 left to implementation, so that they are frozen before any model is fitted or scored. **No model was fitted, scored or calibrated on FraudGuard data** while preparing it, and no test label was read. Synthetic fitting did occur: the mentor-requested integration test `TestSyntheticFittedIntegration` (C7) fits small estimators and sigmoid calibrators on *generated* arrays to check conventions. It never reads the FraudGuard dataset and evaluates no project model.
+
+**Who decided what.**
+- Items C2, C3 (seed values) and C6 record decisions the project owner made in the Phase 5B-0 briefing (2026-11-11).
+- Items C3 (generator handling), C4 and C5 are implementation conventions prepared in Phase 5B-0 within the limits of Revision 4.
+- The mentor reviewed Phase 5B-0 on 2026-11-11 and approved the specific conventions listed in item C7; everything else in this appendix keeps the status stated where it appears.
+- In the final review (2026-11-11), the mentor approved the remaining implementation conventions listed in C7, subject to the final corrections in C8, and decided the reliability lower-tail bin (C8). Final approval (sign-off) of Phase 5B-0 as a whole is still pending.
+- Item C1 corrects wording only.
+
+### C1. Approval record and pre-closure wording
+
+- **Approval:** the project owner approved Revision 4 and the six final decisions of Section 13.0 on 2026-11-09, and closed Phase 5A. Revisions 2–4 answered methodology reviews (M01–M08, R3-01–R3-05, and R4-01–R4-06 "following the mentor's revision 3 review"). **This repository records no separate mentor sign-off of Revision 4 or of the closure**, and none is implied here.
+- **Pre-closure statements and their resolution.** They are kept in place as history, with a pointer to this item:
+
+| Statement (location) | Resolution |
+|---|---|
+| "No revision is approved; approval is recorded only by the human reviewer" (header) | Superseded by the closure approval in the header and Section 13.0 |
+| "[R] … requires mentor approval" (evidence-label legend) | Section 13.0 records the **project owner's** approval of the six listed final decisions and states that "all other Revision 4 recommendations remain unchanged and approved". That is an owner approval, not a mentor sign-off. [R] still marks content that is a recommendation or interpretation rather than a verified fact |
+| "The change needs mentor confirmation (decision #1b)" (Section 6.4 note; risk 16) | Resolved by the project owner's final decision (Section 13.0, row #1b): C-F is retrospective sensitivity only, never a fallback or primary evidence; the safe alternative on a technical calibration failure is uncalibrated scores |
+| "unresolved decision #1d" (Section 6.5; table row #1d; risk 24) | Resolved by the project owner's final decision (Section 13.0, rows #1c/#1d): no near-flatness cutoff; the 1e-8 numerical guard is kept; calibrator slope and logit SD are always reported |
+| "evaluated only if the mentor approves it (decision #9)" (Section 8.3 (b)) | Resolved by the project owner's final decision (Section 13.0, row #9): the amount-aware decision policy is excluded; amount-aware cost accounting (a) stays as a sensitivity |
+| "That code change needs approval (Section 13)" (Section 12.1, test-use row) | Covered by Section 13.0's general owner approval of the remaining recommendations, which includes decision #12 (new modules and a separate guarded final-test runner). Decision #12 is not one of the six individually listed final decisions |
+| "Not approved; approval is the human reviewer's" (Appendix B, Revisions 2–4) | Historical log entries; accurate at the time, superseded by the closure |
+
+### C2. Amount-tercile calibration: not required
+
+Calibration by amount tercile (Section 8.3, assumption 1; Section 11.1, calibration row) belongs to the amount-aware *decision policy*, which is excluded (decision #9). It is **not computed in Phase 5B**. Phase 5B introduces no amount-aware calibration and no amount-based selection criterion, and does not extend the primary scope. The calibration analyses are exactly those of Sections 6.3–6.5 and 11.1, minus this row. Amount-aware *cost accounting* of rank-based policies (Section 8.3 (a)) is unchanged.
+
+### C3. Frozen random seeds
+
+All generators are `numpy.random.default_rng(seed)`. The values live in `src/models/phase5_settings.py` and are copied into every manifest.
+
+| Seed | Value | Procedure it controls | Generator handling |
+|---|---:|---|---|
+| Model `random_state` | 42 | Every LR and HGB fit, including the HGB double-fit determinism check (Sections 4.1, 5.3, 12.2) | Estimator parameter; unchanged |
+| **E2 split seed** | **42** | The 2,000 random 10/11 block assignments of the selection-aware procedure (Section 7.5) | One generator; split *i* = `sorted(rng.choice(21, size=10, replace=False))`, drawn sequentially for *i* = 0…1,999. Repeated splits are kept, so all 2,000 count as attempted. The generator is used for nothing else |
+| **`T_cal` calibrator-bootstrap seed** | **42** | The CBB of `T_cal` that refits the Platt sigmoid (Section 6.5 (A); B = 2,000, 15-min blocks) | A fresh generator for each model family, so the LR and HGB calibrators are refitted on identical resampled `T_cal` rows. This supersedes Section 12.2's general `default_rng(0)` for this procedure only |
+| **Conditional bootstrap seed** | **0** (unchanged, Section 7.2) | The paired block bootstrap behind E1 (CBB primary; MBB and stationary sensitivities; 5/10/15/30 min) on validation and on test; the calibration-evaluation bootstrap (B), which uses these same replicates | A fresh generator for each (partition, scheme, block length) analysis, so a result does not depend on execution order. Within an analysis, both models share each replicate's blocks (pairing) |
+| Other bootstraps | 0 | The i.i.d. continuity CI (Section 7.2), the W1 replay-champion bootstrap (Section 10.2), the Q3 procedure bootstrap and the regret band (Sections 10.3, 10.5) | Section 12.2's existing general rule (`default_rng(0)`), one fresh generator per analysis. Approved by the mentor (C7) |
+
+*What per-analysis generators do and do not guarantee (mentor correction, 2026-11-11):*
+- Creating a fresh generator from its seed at the start of each analysis makes every result **reproducible independently of execution order**.
+- It does **not** make the random streams of different analyses statistically independent. Generators created from the same seed produce the same stream, so, for example, the conditional bootstraps at 10, 15 and 30 min draw from identical underlying sequences.
+- No cross-analysis RNG independence is claimed.
+- Within one analysis, both models always share each replicate's resampled rows (paired bootstrap). For the `T_cal` bootstrap, the LR and HGB calibrators are deliberately refitted on identical resampled rows.
+
+*Reproducibility scope:* NumPy guarantees the `default_rng` bit stream for a given version, but sampling helpers such as `Generator.choice` may change between versions. Seeded draws are therefore verified only for NumPy 2.3.2, which is recorded in every manifest; a regression test pins the first three E2 splits.
+
+### C4. Block and buffer convention for E2 (Section 7.5)
+
+Implemented in `src/data/validation_blocks.py` and tested in `tests/test_validation_blocks.py`. Block length (15 min), block count (21), split sizes (10/11), buffer (5 min), the 10-fraud usability rule and the 1,000-usable-split minimum are all unchanged.
+
+1. **Blocks are half-open intervals of whole seconds:** block *j* = [e_j, e_{j+1}), with e_0 = 132,929 (first validation second) and e_j = 132,929 + 900·j. The final edge is e_21 = 151,329, one second after the last validation timestamp. A row belongs to the block containing its `Time`, so rows that share a timestamp always share a block.
+2. **The final partial block** is [150,929, 151,329), 400 s. It is an ordinary block in the random assignment: it can fall in either half and is not merged, dropped or reweighted.
+3. **Buffer zones.** For each selection block [a, b), the buffer zone is [a − 300, a) ∪ [b, b + 300): both ends of each zone are fixed by the half-open rule (inclusive start, exclusive end). A held-out row is **kept** iff its block is a held-out block and its `Time` lies in no buffer zone. The buffer is measured from block boundaries, not from individual rows, so it does not depend on where transactions or frauds happen to fall.
+4. **Boundary timestamps.** On integer seconds, a held-out row at `Time` = a − 301 is kept, and a − 300 … a − 1 are dropped. b … b + 299 are dropped, and b + 300 is kept. Every kept held-out row is therefore at least 301 s from every second of every selection block. A held-out block between two selection blocks keeps exactly its middle 300 s. A held-out final partial block next to a selection block keeps its last 100 s (151,229–151,328).
+5. **No buffer beyond the period:** no buffer is applied outside [132,929, 151,329). Selection rows are never dropped; the selection half uses every row of its 10 blocks.
+6. **Usability is counted after the buffer:** a split is usable iff the *buffered* held-out half holds ≥ 10 frauds. This follows Section 7.5: step 3 defines the held-out half with the buffer, step 7 refers to that half, and the expected held-out share of "about a third of validation, i.e. roughly 15–20 frauds" is stated after the buffer.
+7. **What it guarantees and what it does not:** no row is in both halves, and kept held-out rows are separated from selection rows by more than 5 minutes. A burst that chains through dropped rows can still link the halves, so the buffer **limits** short-range dependence without removing it (Section 7.5, limitations).
+
+### C5. Score representation: `decision_function` for both models
+
+**Evidence (scikit-learn 1.9.1, read from the installed source; no model fitted).**
+- `LogisticRegression.decision_function` returns X·coef + intercept, documented as the confidence score for `classes_[1]`. Its binary `predict_proba` is `expit(decision_function)`.
+- `HistGradientBoostingClassifier.decision_function` returns the raw float64 sum of tree leaves, a log-odds for `classes_[1]`. Its `predict_proba` applies the binomial inverse link, `expit`.
+- `CalibratedClassifierCV` obtains its calibrator input through `response_method=["decision_function", "predict_proba"]`, so with these models it already uses `decision_function`.
+- `Pipeline` exposes `decision_function` when its final step does. `DummyClassifier` has no `decision_function`.
+- **Saturation (float64 arithmetic):** `expit(z)` equals exactly 1.0 for every z ≥ about 36.74. Above about 30 it loses resolution: 1,001 distinct logits in [30, 31] map to only 267 distinct probabilities. The Phase 4 balanced LR already produced validation probabilities of 1 − 8.2×10⁻¹⁵ (logit ≈ 32), so Phase 5 grid points with weaker regularization or no class weighting can be expected to reach this regime.
+
+**Options considered.**
+
+| Option | Assessment |
+|---|---|
+| `predict_proba[:, 1]` | Rejected. It creates artificial ties at high scores; ties change AP and make Precision@K depend on the tie-break |
+| `1 − predict_proba[:, 0]`, `predict_log_proba`, or `logit(predict_proba)` | Rejected. Each is computed from the already-rounded probability, so the lost resolution cannot be recovered |
+| Rank transform of any of the above | Rejected. It inherits the ties of its input |
+| **`decision_function`** | **Adopted.** Available on both families. It is the log-odds itself, with no saturation, and it is strictly increasing in the probability in exact arithmetic, so the intended ranking is the same. It is also what Section 6.3 names as the calibrator input |
+
+**Interface (`src/models/ranking_score.py`).**
+- `ranking_scores(estimator, X, positive_label=1)` calls `decision_function` only; there is no silent fallback to `predict_proba`.
+- It requires a binary estimator that knows `positive_label`, flattens an (n, 1) output, rejects non-finite values and returns a float64 copy.
+- If the positive label were `classes_[0]`, it negates the score. Negation is exact in floating point, so no ties are created. For FraudGuard, the positive class 1 is `classes_[1]`.
+
+**Use of the score.**
+- The same float64 array is used for AP, ROC-AUC, the threshold curves and empirical rank cut-offs, fixed-K, the time-based queue, E1, E2 and the calibrator input.
+- Comparisons are exact, with no tolerance.
+- Genuine ties are left as they are: identical inputs, and HGB's piecewise-constant leaves, both produce them. AP treats each tied group as one threshold step. Precision@K and the queue break ties with the Section 9.2 key (`ranking_order`), and their tie reporting (Section 9.2) is unchanged.
+- Empirical thresholds are stated on the `decision_function` scale.
+
+**Calibration mapping.**
+- Protocol: z = A·s + B, p = expit(z).
+- scikit-learn's sigmoid calibrator: p = expit(−(a_·s + b_)). Hence A = −a_ and B = −b_ (`protocol_platt_parameters`).
+- The positive-slope requirement A > 0 is a_ < 0 in scikit-learn's terms.
+- The 1e-8 guard is applied to z computed directly from the scores (`calibrated_logits`, `is_numerically_constant`).
+  - It uses the population SD (ddof = 0) and a strict comparison: a calibrator is numerically constant iff SD(z) < 1e-8, or any z is non-finite.
+  - An SD of exactly 1e-8 is **not** constant.
+  - The choice of ddof can change the outcome near the cutoff: for two values, the sample SD is √2 times the population SD. This is why ddof = 0 is fixed explicitly and tested below, at and above the threshold.
+- For max |s| ≥ 30, scikit-learn rescales the scores internally during the fit and converts the slope back. This affects only optimizer conditioning, and the reported A is in original score units.
+- scikit-learn's sigmoid uses Platt's (2000) smoothed targets. This is part of the approved "sigmoid (Platt)" method and is not changed.
+- The Bayes threshold p\* = 1/R is applied to calibrated p (equivalently z ≥ logit(1/R)).
+
+**Scope notes.**
+- The majority-class reference has no `decision_function`. It is reported only, and any constant score gives AP = prevalence, so it is exempt.
+- Phase 4 results were computed on `predict_proba` and stay unchanged. In the Section 4.4 continuity comparison, a difference between the two representations of the same fit can come only from saturation ties. Phase 5B reports which representation each number uses.
+- **Section 4.4 continuity comparison: three columns (mentor's proposal, 2026-11-11; frozen in `src/models/phase5_settings.py`, key `reporting.phase4_continuity_comparison`):**
+
+  | Column | Model | Score | Role |
+  |---|---|---|---|
+  | 1. Phase 4 historical | LR C = 1, balanced, fitted on the full train partition | `predict_proba` | Historical reference. Quoted from `reports/phase4b_baseline_results.json`, never recomputed |
+  | 2. Phase 5 primary | LR C = 1, balanced, fitted on `T_fit` | `decision_function` | Primary |
+  | 3. Phase 5 diagnostic | The same `T_fit` fit as column 2 | `predict_proba` | **Diagnostic only.** It never influences hyperparameter selection, the champion decision, thresholds, calibration or any primary evaluation |
+
+  - Column 1 vs column 2 mixes the data change (`T_fit` and the gap) with the representation change.
+  - Column 2 vs column 3 isolates the representation, because it is the same fit.
+  - The number of unique scores under each representation may be reported with column 3.
+  - Nothing is fitted or scored for this comparison before Phase 5B-1.
+- Exact tie patterns at the last bit can depend on the BLAS build. Bit-identical scores are expected only in the verified environment.
+
+### C6. Result storage and the freeze manifest
+
+- **Result storage:** `docs/result_storage_policy.md`. Compact strict-JSON summaries are tracked; target ≤ 5 MB and hard limit 10 MB per file, with any exception explained in the report. Raw data, fitted models and large prediction arrays are never tracked. The writer is `src.reproducibility.manifest.write_result_json`.
+- **Freeze manifest** (Section 4.2, step 9): the template is `docs/templates/phase5_freeze_manifest.template.json`, generated and validated by `src/reproducibility/manifest.py`. It separates the *pre-registered configuration* (fixed now, identical to `src/models/phase5_settings.py`) from *validation-stage decisions* (filled at step 9), and it never stores metric values.
+- **Environment manifest:** `reports/environment_manifest.json`.
+
+### C7. Mentor review of Phase 5B-0 (2026-11-11)
+
+The mentor reviewed the Phase 5B-0 review package and **approved these decisions**. They are not to be changed:
+- E2 sampling: sequential `default_rng(42)`, 2,000 draws, 10 of 21 blocks without replacement per draw, repeated draws retained (C3);
+- half-open block intervals (C4.1);
+- the final 400-second partial block treated as an ordinary block (C4.2);
+- the documented 300-second half-open buffer zones (C4.3–C4.5);
+- E2 usability counted after buffering (C4.6);
+- the `T_cal` bootstrap seed 42, with identical resampled rows across model families (C3);
+- the conditional bootstrap seed 0 (C3);
+- other bootstraps seed 0 under Section 12.2 (C3);
+- `decision_function` for both model families and as the calibration input (C5);
+- the Platt mapping A = −a_, B = −b_ (C5).
+
+**Corrections required by the mentor and applied in Phase 5B-0:**
+1. **RNG wording:** per-analysis generators give order-independent reproducibility, not cross-analysis statistical independence; pairing within an analysis is preserved (C3).
+2. **Constancy guard:** population SD (ddof = 0) with the strict comparison SD < 1e-8 is kept. Synthetic tests now cover below, exactly at and above the threshold, plus a case where ddof changes the outcome (C5).
+3. **Integration test:** a synthetic-only integration test fits small estimators and a sigmoid calibrator on generated data. It confirms positive-class orientation and the calibration sign convention, and it never reads the FraudGuard dataset (`tests/test_ranking_score.py`, `TestSyntheticFittedIntegration`).
+4. **Phase 4 continuity:** the three-column comparison is documented (C5) and frozen in the settings.
+5. **Governance:** C1 now attributes each approval to the project owner where Section 13.0 is the source, and this item records the mentor's review.
+
+**Not individually approved by the mentor:** the remaining implementation conventions presented in the review package. They are:
+- the score negation for a positive label at `classes_[0]`;
+- no `predict_proba` fallback, and the exemption of the majority-class reference;
+- exact float comparison in ranking, with −0.0 equal to 0.0;
+- thresholds stated on the score scale;
+- fresh generators per analysis;
+- rejection of fractional timestamps;
+- the C-B holdout start times;
+- the NumPy-version scope of seeded draws;
+- the freeze-manifest structure;
+- the byte definition and refusal behaviour of the storage policy;
+- the requirement pins;
+- the dataset-check exit codes.
+
+They remain implementation conventions, documented above, and are covered only by whatever overall sign-off of Phase 5B-0 the mentor gives. *(Final review, 2026-11-11: the mentor approved these implementation conventions, subject to the final corrections recorded in C8. That approval covers the conventions only. Final approval (sign-off) of Phase 5B-0 as a whole is a separate step and is still pending.)* **Still open:** how calibrated probabilities below 10⁻⁶ are binned in the reliability table (Section 6.5 decade edges). *(Resolved by the mentor on 2026-11-11: see C8.)*
+
+### C8. Reliability bins and final corrections (mentor final review, 2026-11-11)
+
+**Reliability decade bins (resolves the C7 open item; mentor decision).**
+- **Edges:** 0, 10⁻⁶, 10⁻⁵, 10⁻⁴, 10⁻³, 10⁻², 10⁻¹, 1. This adds the lower-tail edge 0 to the Section 6.5 decade edges.
+- **Bins:** seven of them, [0, 10⁻⁶), [10⁻⁶, 10⁻⁵), [10⁻⁵, 10⁻⁴), [10⁻⁴, 10⁻³), [10⁻³, 10⁻²), [10⁻², 10⁻¹), [10⁻¹, 1].
+  - Every bin is half-open (lower edge included, upper edge excluded) except the last, which is closed, so p = 1.0 is included.
+  - Together the bins partition [0, 1]: every calibrated probability falls in exactly one bin.
+- **Assignment** (`src/models/ranking_score.py`, `reliability_bin_index`):
+  - Bin k holds p iff e_k ≤ p < e_{k+1}, and the last bin also holds p = 1.0.
+  - Comparisons are exact in float64 against the literal edges, with no tolerance.
+  - A probability that underflows to exactly 0 falls in the first bin.
+  - Values outside [0, 1], or non-finite values, are rejected.
+- **What is unchanged:** the K-derived edges, their timing (computed from scores after scoring, frozen before labels are joined) and the "not interpretable" flag for bins with fewer than 5 observed or 5 expected frauds (Section 6.5).
+- **Where it is frozen:** `src/models/phase5_settings.py` (`RELIABILITY_BIN_EDGES`; configuration key `calibration.reliability_bins`) and therefore the freeze-manifest template.
+
+**Final wording corrections (mentor final review).**
+1. The opening paragraph of this appendix now states that no model was fitted, scored or calibrated on FraudGuard data, and that synthetic fitting did occur in the integration test.
+2. The C3 "Other bootstraps" row no longer asks for mentor confirmation; seed 0 is approved (C7).
+3. The Section 12.1 note attributes decision #12 to the project owner's general approval in Section 13.0, not to the six individually listed final decisions.
+4. The `tests/test_ranking_score.py` module docstring acknowledges the synthetic fitted integration tests.

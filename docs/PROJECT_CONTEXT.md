@@ -3,15 +3,19 @@
 ## Verified repository facts
 
 - FraudGuard is an educational credit-card fraud detection project.
-- Current project phase: **Phase 5 — methodology and design briefing complete; the design decisions are approved (recorded 2026-11-08) but not implemented.** The Phase 5 design documentation has been reviewed and is committed in `4c463f4`. Phase 5 implementation has not started; no Phase 5 code, experiments or results exist yet. See "Approved Phase 5 design decisions" below.
+- Current project phase: **Phase 5B-0 — protocol and documentation remediation and reproducibility infrastructure, implemented (2026-11-11) and awaiting mentor review.**
+  - **Phase 5A** (experimental protocol) is approved by the project owner and closed (2026-11-09). The approved protocol is `docs/phase_5a_experimental_protocol.md`, Revision 4 plus closure, committed in `9b6d8e8` (originally `760ccc3`; renamed by the 2026-11-11 attribution rewrite, files identical; see WORK_LOG).
+  - Phase 5B-0 adds the implementation clarification addendum (protocol Appendix C), frozen settings, the ranking-score interface, the E2 block and buffer convention, reproducibility tooling and the onboarding documentation. See `docs/reports/PHASE_5B_0_COMPLETION_REPORT.md`.
+  - **No Phase 5 model has been fitted or scored, and no Phase 5 experiment or result exists.**
+  - Earlier status: the Phase 5 design briefing was approved on 2026-11-08 (committed in `a84f94a`, originally `4c463f4`); see "Approved Phase 5 design decisions" below.
 - Phase 4 — Model Development & Evaluation is complete and mentor-approved (2026-11-08). Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`, and the Phase 4c specification treats it as a completed prerequisite. **Phase 4c (threshold analysis and temporal stability) is approved and complete, committed and pushed in `cffc32c`.** The retrospective documentation remediation of Phases 1–4 was completed on 2026-11-08: Phase 1 is committed in `0459921`, the Phase 2 report in `9b52a8a`, and the Phase 3 report in `ac178c3`. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7` (the Phase 4 completion commit).
-- Documentation: `README.md` (overview and usage), this file (architecture and methodology), `docs/WORK_LOG.md` (chronological history and experiment results), `docs/TECHNICAL_DOCUMENTATION.md` (component reference), and `docs/FINAL_REPORT.md` (pending placeholder). Topic documents: `docs/business_understanding.md` and `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `docs/reports/phase1_foundation.md`; Phase 2: `docs/reports/phase2_data_understanding.md`; Phase 3: `docs/reports/phase3_data_splitting.md`; Phase 4: `docs/reports/phase4_model_development.md`, committed in `1f510f7`).
+- Documentation: `README.md` (overview and usage), this file (architecture and methodology), `docs/WORK_LOG.md` (chronological history and experiment results), `docs/TECHNICAL_DOCUMENTATION.md` (component reference), and `docs/FINAL_REPORT.md` (pending placeholder). Topic documents: `docs/business_understanding.md` and `docs/validation_strategy.md`. Phase 5 protocol: `docs/phase_5a_experimental_protocol.md` (Revision 4; Appendix C = Phase 5B-0 clarifications). Policies and templates: `docs/result_storage_policy.md`, `docs/templates/phase5_freeze_manifest.template.json`. Dataset instructions: `data/README.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `docs/reports/phase1_foundation.md`; Phase 2: `docs/reports/phase2_data_understanding.md`; Phase 3: `docs/reports/phase3_data_splitting.md`; Phase 4: `docs/reports/phase4_model_development.md`, committed in `1f510f7`; Phase 5B-0: `docs/reports/PHASE_5B_0_COMPLETION_REPORT.md`).
 - Data documentation expects `data/raw/creditcard.csv`. Raw data is ignored by Git and must remain unchanged.
-- Requirements listed in `requirements.txt`: pandas, NumPy, Matplotlib, Seaborn, Jupyter, ipykernel and scikit-learn (1.9.1 installed in the designated environment).
-- Tests run from the repository root with `/Users/duc/Desktop/env/bin/python -m unittest discover -s tests -v`. They use the standard-library `unittest`; pytest is not installed or required.
-- The designated environment is `/Users/duc/Desktop/env/bin/python` (Python 3.13.6, pandas 2.3.1, NumPy 2.3.2, scikit-learn 1.9.1).
+- Requirements (Phase 5B-0): `requirements.txt` pins NumPy 2.3.2, pandas 2.3.1, scikit-learn 1.9.1, SciPy 1.17.1, Matplotlib 3.10.5 and seaborn 0.13.2. `requirements-notebook.txt` (optional) adds ipykernel 7.1.0 and an unpinned `jupyter` front end. *Superseded:* the earlier unpinned list included `jupyter`, which is not installed in the verified environment.
+- Tests run from the repository root with `python -m unittest discover -s tests -v`, using the activated project environment. They use the standard-library `unittest`; pytest is not installed or required. Setup for new users: `README.md`, "Getting started".
+- Verified environment: Python 3.13.6 with the pinned versions above, recorded in `reports/environment_manifest.json`. It is the original developer's local environment, which must not be modified. Other environments are not verified.
 
-## Architecture (as of Phase 4c)
+## Architecture (as of Phase 5B-0)
 
 | Concern | Module |
 |---|---|
@@ -23,6 +27,10 @@
 | Metrics | `src/evaluation/metrics.py` |
 | Train/evaluate runner | `src/models/experiment.py` (`fit_and_score`, `fit_and_evaluate`); CLI `python -m src.models.run_baselines` |
 | Threshold analysis (Phase 4c) | `src/evaluation/threshold.py`; validation time windows in `src/data/temporal_windows.py`; CLI `python -m src.models.run_threshold_analysis` |
+| Frozen Phase 5 settings (Phase 5B-0) | `src/models/phase5_settings.py`: seeds, partitions, grids and protocol constants; declarations only |
+| Ranking-score interface (Phase 5B-0) | `src/models/ranking_score.py`: `decision_function` score, Section 9.2 ordering key, Platt sign mapping, constancy guard |
+| E2 blocks and buffer (Phase 5B-0) | `src/data/validation_blocks.py` |
+| Reproducibility (Phase 5B-0) | `src/reproducibility/dataset.py` (fingerprint check); `src/reproducibility/manifest.py` (environment manifest, freeze-manifest template, result-size policy) |
 
 Both splits return the same ordered categorical `train`/`validation`/`test` labels, so they plug into the same runner. Preprocessing lives inside each scikit-learn `Pipeline`, so `fit` on the training rows is the only place any statistic is learned. The runner refuses to evaluate on the test partition. Phase 4c fits once, scores validation once, and reuses those scores for every threshold and window analysis. Details: `docs/TECHNICAL_DOCUMENTATION.md`.
 
@@ -71,9 +79,17 @@ Phase 4b results are recorded in `docs/WORK_LOG.md` and `reports/phase4b_baselin
 
 ## Approved Phase 5 design decisions (methodology briefing, recorded 2026-11-08)
 
-> **Status: approved design, not implemented.** These items are planned methodology. No Phase 5 code has been written, no Phase 5 experiment has been run, and no Phase 5 result exists. The briefing's full text is not stored in this repository; this section records the approved decisions at the level of detail agreed.
+> **Status: approved design, now fully specified by the approved protocol** (`docs/phase_5a_experimental_protocol.md`, Revision 4, closed 2026-11-09; clarifications in Appendix C, 2026-11-11). No Phase 5 experiment has been run and no Phase 5 result exists. The briefing's full text is not stored in this repository; this section records the briefing-level decisions. Where the protocol refines them, the protocol governs.
 >
-> **Awaiting detailed specification** (not set; must not be assumed): K values for fixed-K capacity; the definition of time-based review capacity; cost ratios for the cost-sensitive and break-even analysis; the temporal-block bootstrap block length; the hyperparameter search space.
+> *Superseded (2026-11-09):* the list formerly headed "Awaiting detailed specification" is now specified in the protocol:
+> - K values for fixed-K capacity: Section 9.2.
+> - The time-based capacity definition: Section 9.3.
+> - Cost ratios: Section 8.2.
+> - Block length: Sections 7.2 and 7.4.
+> - Hyperparameter search space: Section 5.
+> - Calibration holdout: Section 6.2 (C-A).
+>
+> The final decisions are in Section 13.0.
 
 - **Validation design**
   - A temporal validation and tuning protocol.
@@ -81,9 +97,17 @@ Phase 4b results are recorded in `docs/WORK_LOG.md` and `reports/phase4b_baselin
   - Window 1 → Window 2 transfer evaluation (the Phase 4c temporal windows).
 - **Models**
   - HistGradientBoosting is the challenger model. The Phase 4 balanced Logistic Regression is the existing baseline.
+  - Champion rule (protocol Section 4.3, Section 13.0):
+    - Logistic Regression is the default champion.
+    - HGB replaces it only if both E1 and E2 pass.
+    - If E2 has fewer than 1,000 usable splits of 2,000, it is not estimable and Logistic Regression is retained.
 - **Calibration**
   - Model calibration is part of Phase 5.
-  - A temporal calibration holdout has priority. Ensemble investigation is the fallback, if needed.
+  - A temporal calibration holdout has priority (protocol Section 6, C-A: the last ~20% of train, sigmoid).
+  - *Superseded by the approved protocol (decision #1b, Section 13.0):* the briefing's "ensemble investigation is the fallback, if needed" no longer applies.
+    - On a technical calibration failure, the affected model uses its **uncalibrated scores**. That is the safe alternative.
+    - The cross-fitted ensemble (C-F) is a **retrospective sensitivity analysis only**: never a calibration fallback and never primary evidence.
+    - Calibration status is decided separately for each model.
 - **Statistical comparison**
   - Paired bootstrap evaluation.
   - Temporal-block bootstrap for the online queue evaluation, when feasible. Otherwise: point estimates with sensitivity analysis.
@@ -104,7 +128,9 @@ No feature engineering or hyperparameter tuning has been performed. The data cov
 
 Phase 4 is complete, mentor-approved and committed on branch `main` (Phase 4c in `cffc32c`; completion work and Phase 4 report in `1f510f7`). The 9.5 MB results file `reports/phase4c_threshold_results.json` stays tracked in Git (project-owner decision, 2026-11-08), and Git history is not rewritten. The retrospective documentation remediation of Phases 1–4 is complete. A model-input duplicate checker is a recorded future improvement and needs separate approval.
 
-The Phase 5 methodology and design briefing is complete, and its decisions are recorded above as approved design. The design documentation review is complete; the documentation is committed in `4c463f4`. **Next task:** Phase 5 experimental protocol preparation. Phase 5 implementation has not started; it starts only on explicit approval and proceeds with review between stages. Do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. The Phase 4c thresholds are analytical; no operational threshold has been chosen. See `docs/WORK_LOG.md` for details.
+The Phase 5 methodology and design briefing is complete, and its decisions are recorded above as approved design. The design documentation is committed in `a84f94a` (originally `4c463f4`). Phase 5A (experimental protocol) is approved and closed (committed in `760ccc3`). *Historical:* the next task recorded here before the protocol was "Phase 5 experimental protocol preparation"; that is done.
+
+**Current state:** Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) is implemented and **awaiting mentor review**. It is not committed: the owner commits after review. **Next task:** Phase 5B-1, the first implementation and experiment stage of the protocol. It starts only on explicit approval and proceeds with review between stages. Seeds, the ranking score (`decision_function`), the E2 buffer convention and the result-storage policy are frozen before it (protocol Appendix C). Do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. The Phase 4c thresholds are analytical; no operational threshold has been chosen. See `docs/WORK_LOG.md` for details.
 
 ## Assumptions
 

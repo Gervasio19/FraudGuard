@@ -1,7 +1,13 @@
-pandas
-numpy
-matplotlib
-seaborn
-jupyter
-ipykernel
-scikit-learn
+# FraudGuard core dependencies.
+# Exact pins = the versions installed in the project's verified environment
+# (Python 3.13.6; recorded in reports/environment_manifest.json, Phase 5B-0).
+# Other Python versions or package versions are not verified.
+numpy==2.3.2
+pandas==2.3.1
+scikit-learn==1.9.1
+# Required by the Phase 5 protocol's statistics (e.g. exact Poisson intervals via
+# scipy.stats); also a hard dependency of scikit-learn.
+scipy==1.17.1
+# Plotting: planned for Phase 5 figures (protocol Section 11.2); no current module imports them.
+matplotlib==3.10.5
+seaborn==0.13.2

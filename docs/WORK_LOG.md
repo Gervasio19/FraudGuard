@@ -2,10 +2,102 @@
 
 ## Current status
 
-- **Current phase:** Phase 5 — **Phase 5A (experimental protocol) approved and closed (2026-11-09)** (session at the top). The frozen protocol is `docs/phase_5a_experimental_protocol.md` (Revision 4 plus closure). The Phase 5 design documentation is committed in `4c463f4`. Phase 5B (implementation) has not started; no Phase 5 code, experiments or results exist. Next task: Phase 5B, only on explicit start.
+- **Current phase:** Phase 5 — **Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) implemented on 2026-11-11 and awaiting mentor review; not committed** (session at the top).
+  - Phase 5A (experimental protocol) was approved by the project owner and closed on 2026-11-09, committed in `9b6d8e8` (originally `760ccc3`; see the commit-ID mapping below).
+  - The frozen protocol is `docs/phase_5a_experimental_protocol.md` (Revision 4 plus closure), with implementation clarifications in its Appendix C (Phase 5B-0).
+  - **No Phase 5 model has been fitted or scored; no Phase 5 experiment or result exists.**
+  - Next task: Phase 5B-1, only on explicit approval.
+  - *Superseded wording (2026-11-09):* "Phase 5B (implementation) has not started; no Phase 5 code … exist". Phase 5B-0 added infrastructure code, but no experiment code.
 - **Phase 4:** Model Development & Evaluation, **complete and mentor-approved (2026-11-08)**. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. The retrospective documentation remediation of Phases 1–4 is complete (see the sessions below). The Phase 1, Phase 2 and Phase 3 reports are committed. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7`.
-- **Key commits on branch `main`** (verified 2026-11-08): the Phase 1 remediation (`0459921`), the Phase 2 report (`9b52a8a`), the Phase 3 report (`ac178c3`), the Phase 4 completion (`1f510f7`, `Complete Phase 4 model development and evaluation`) and the Phase 5 design documentation (`4c463f4`, `docs: finalize approved Phase 5 design documentation`). Use `git log` for the current `HEAD`.
-- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`; Phase 4: `phase4_model_development.md`, committed in `1f510f7`; created in the sessions below).
+- **Key commits on branch `main`** (verified 2026-11-08): the Phase 1 remediation (`0459921`), the Phase 2 report (`9b52a8a`), the Phase 3 report (`ac178c3`), the Phase 4 completion (`1f510f7`, `Complete Phase 4 model development and evaluation`) and the Phase 5 design documentation (`a84f94a`, originally `4c463f4`, `docs: finalize approved Phase 5 design documentation`). Use `git log` for the current `HEAD`.
+- **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`; Phase 4: `phase4_model_development.md`, committed in `1f510f7`; Phase 5B-0: `PHASE_5B_0_COMPLETION_REPORT.md`; created in the sessions below). Phase 5 protocol: `docs/phase_5a_experimental_protocol.md`. Policy: `docs/result_storage_policy.md`. Dataset: `data/README.md`.
+
+## Local Git attribution rewrite (2026-11-11; owner-approved; not pushed)
+
+Scope: removal of two `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` trailers from commit messages, so Claude is not listed as a contributor. Local only: **nothing pushed**; `origin/main` on GitHub still points to the old `760ccc3`. Not done: changes to any file content in history, to methodology or code; no commit of Phase 5B-0.
+
+- **Remote check before rewriting:** `git ls-remote origin` showed one branch, `refs/heads/main` (and `HEAD`) at `760ccc3f229d9af6f79203f1d4ece44d1a9da517`, unchanged.
+- **Method:**
+  - The raw commit objects were rewritten with `git hash-object`.
+  - The exact trailer and its preceding blank line were removed from two messages, and the parent lines were updated.
+  - Tree, author, committer, timestamps and all other message bytes are unchanged. No commit was signed.
+  - `main` was then moved with `git update-ref`, which leaves the index and working tree untouched.
+- **Commit-ID mapping** (the files of each commit are identical; only the IDs changed):
+
+  | Old | New | Subject | Change |
+  |---|---|---|---|
+  | `4c463f474711dc78a1ee4fe047072ecd49c712d4` | `a84f94a503a4f70cbaba2186f96cae5202e554a0` | docs: finalize approved Phase 5 design documentation | Trailer removed |
+  | `7f3387a52765751c7355aed390322d5969c79d72` | `c349f04ffab5597bc5f8b2a454092fd4b112849f` | docs: synchronize Phase 5 project status | Trailer removed |
+  | `760ccc3f229d9af6f79203f1d4ece44d1a9da517` | `9b6d8e8855fe7ad27995df7727fd17215551d27e` | docs: close Phase 5A with approved experimental protocol | Re-parented only |
+
+  The 11 earlier commits (`e4e866d` … `1f510f7`) are unchanged.
+- **Historical files:** files committed inside the rewritten commits still mention `4c463f4` as they always did. They were deliberately not altered; use this table to resolve old IDs. Current documents now cite the new IDs, and the old ID where an action used the old object.
+- **Backups:**
+  - branch `backup/pre-attribution-rewrite` (at `760ccc3`);
+  - `.git/backups/phase5b0-attribution-rewrite-2026-11-11/`: a Git bundle of the old history, a patch of the tracked working-tree changes, a tar of the untracked files, the pre-rewrite `git status`, and `SHA256SUMS`;
+  - a copy of the same files in the session scratchpad.
+  - Restore was verified: the bundle clone plus patch plus tar matches all 62 working-tree files byte-for-byte.
+- **Status:** awaiting owner review. A push would require `git push --force-with-lease=main:760ccc3f229d9af6f79203f1d4ece44d1a9da517 origin main`, and is not done.
+
+## Phase 5B-0 protocol and documentation remediation (2026-11-11)
+
+Scope: implementation of the owner-approved Phase 5B-0 briefing, following the read-only Phase 5B readiness audit of `760ccc3` (now `9b6d8e8`, identical files; verdict READY WITH CONDITIONS). **Not done:**
+- model fitting of any kind (LR, HGB, calibrators; also no synthetic fits);
+- prediction, scoring or metric evaluation; E1/E2 execution;
+- test-label access; changes to the split, the raw data or the Phase 4 code and results; changes to the Revision 4 scientific decisions;
+- commits or pushes.
+
+Full report: `docs/reports/PHASE_5B_0_COMPLETION_REPORT.md`.
+
+- **Owner decisions implemented:**
+  - seeds: E2 splits 42, `T_cal` calibrator bootstrap 42, conditional bootstrap `default_rng(0)` (unchanged);
+  - amount-tercile calibration is not required in Phase 5B;
+  - Git tracking and result-storage policy: compact JSON tracked, target ≤ 5 MB, hard limit 10 MB;
+  - an editorial and implementation addendum instead of a Revision 5.
+- **Protocol:**
+  - Appendix C added (C1 approval record and pre-closure wording; C2 amount tercile; C3 seeds; C4 E2 block and buffer convention; C5 score representation; C6 storage and manifests).
+  - Pre-closure sentences annotated in place, not deleted.
+  - No mentor sign-off of Revision 4 is recorded in the repository, and none is claimed.
+- **Score representation (C5):** `decision_function` for both LR and HGB, for ranking, AP, Precision@K, the queue and the calibrator input. It is verified from the scikit-learn 1.9.1 source, and float64 `expit` saturation (exactly 1.0 for logits ≥ 36.74) rules out `predict_proba`. The Platt sign mapping is A = −a_, B = −b_.
+- **Code added (no fitting, no data access except the byte-level fingerprint):** `src/models/phase5_settings.py`, `src/models/ranking_score.py`, `src/data/validation_blocks.py`, `src/reproducibility/{__init__,dataset,manifest}.py`.
+- **Tests added:** 76 synthetic tests in `tests/test_phase5_settings.py`, `test_validation_blocks.py`, `test_ranking_score.py` and `test_reproducibility.py`.
+- **Reproducibility:**
+  - `requirements.txt` exactly pinned to the verified environment, adding SciPy 1.17.1. statsmodels is not added, because no code needs it yet.
+  - `requirements-notebook.txt` added. *Superseded:* the old unpinned list included `jupyter`, which the verified environment does not have.
+  - `reports/environment_manifest.json` added; freeze-manifest template at `docs/templates/phase5_freeze_manifest.template.json`; `docs/result_storage_policy.md`; `.gitignore` extended (environments, caches, large arrays).
+  - README rewritten as a new-user onboarding guide; `data/README.md` extended.
+- **Documentation synchronized:**
+  - README, PROJECT_CONTEXT, validation_strategy, business_understanding, TECHNICAL_DOCUMENTATION and this file.
+  - Outdated "awaiting specification" lists and the "ensemble fallback" wording are marked superseded, with pointers to the protocol.
+  - The roadmap is aligned across files.
+- **Verification:**
+  - 167 safe tests (91 existing + 76 new) passed under a guard that disables every `fit` method and blocks reading the real CSV; no guard violation.
+  - In a fresh clone with a fresh Python 3.13.6 virtual environment installed from `requirements.txt`, on the same machine: the same 167 tests passed, the 21 real-data tests were skipped, and the dataset check returned MISSING and then OK.
+  - Not run: 56 existing tests that fit models (synthetic or real) or read the real dataset including test labels.
+- **Status:** awaiting mentor review; the owner commits.
+- **Mentor review and final corrections (2026-11-11):**
+  - The mentor approved the E2 sampling, half-open blocks, the ordinary partial block, the 300-s buffer zones, post-buffer usability, the seeds (`T_cal` 42 with identical rows across families; conditional 0; others 0 under §12.2), `decision_function`, and the Platt mapping A = −a_, B = −b_ (protocol Appendix C7).
+  - Corrections applied:
+    - RNG wording: order-independent reproducibility, no cross-analysis independence claimed.
+    - Constancy-guard tests below, at and above 1e-8, plus a ddof-sensitive case.
+    - A synthetic-only fitted integration test (`TestSyntheticFittedIntegration`): the only fitting in Phase 5B-0, on generated data.
+    - The three-column Phase 4 continuity comparison, documented and frozen in settings; its `predict_proba` diagnostic column is never used for selection or primary evaluation.
+    - C1 approval attributions tightened.
+  - The template and environment manifest were regenerated.
+  - Tests: 171 safe tests passed under the no-fit, no-dataset guard; the 5 integration tests passed with dataset reads blocked. No real-data test was run.
+  - Still uncommitted; awaiting final approval.
+- **Mentor final review and corrections (2026-11-11):**
+  - The mentor approved the remaining implementation conventions (completion report Section 6.3), subject to final corrections. That approval covers the conventions only; final approval (sign-off) of Phase 5B-0 as a whole is still pending.
+  - Applied:
+    - the four wording fixes: test-module docstring; Appendix C opening (no fitting on FraudGuard data, synthetic fitting acknowledged); C3 stale confirmation request removed; Section 12.1 attribution of decision #12 to the owner's general approval;
+    - the reliability lower-tail bin [0, 1e-6). Bins are [0, 1e-6), [1e-6, 1e-5), …, [0.1, 1.0], the last one closed so that p = 1.0 is included (protocol Section 6.5 note, Appendix C8, `RELIABILITY_BIN_EDGES`, `reliability_bin_index`).
+  - The template and environment manifest were regenerated in the working tree (configuration SHA-256 `86ab5adb…`; not yet committed), and a consistency test was added that checks the working-tree manifest against the current configuration.
+  - Tests: 180 safe tests passed under the no-fit, no-dataset guard; the 5 synthetic integration tests passed with dataset reads blocked.
+  - Still uncommitted; awaiting the mentor's review of these corrections before sign-off.
+- **Mentor documentation corrections (2026-11-11):**
+  - Appendix C7, the completion report and this log now keep approval of the implementation conventions separate from final approval (sign-off) of Phase 5B-0 as a whole. **The sign-off has not been given.**
+  - Manifest and template tests renamed to drop "committed", since the files exist only in the working tree: `test_environment_manifest_is_valid`, `test_environment_manifest_matches_current_configuration`, `test_template_file_matches_code`.
+  - No methodology, model code, Phase 4 artifact or historical result changed. Nothing staged, committed or pushed; awaiting mentor approval.
 
 ## Phase 5A experimental protocol — approved and closed (2026-11-09)
 
@@ -25,13 +117,13 @@ Scope: documentation only. Protocol preparation in four review revisions, then c
 
 ## Phase 5 methodology and design briefing (2026-11-08)
 
-Scope: documentation housekeeping only. The approved Phase 5 design decisions are recorded in the documentation. Not done: Phase 5 code, experiments, training, tuning, calibration, test-set evaluation, or changes to notebooks, data, models, source, tests, configuration or Phase 1–4 results. No commits or pushes. *Resolved:* the documentation review is complete, and the changes are committed in `4c463f4`.
+Scope: documentation housekeeping only. The approved Phase 5 design decisions are recorded in the documentation. Not done: Phase 5 code, experiments, training, tuning, calibration, test-set evaluation, or changes to notebooks, data, models, source, tests, configuration or Phase 1–4 results. No commits or pushes. *Resolved:* the documentation review is complete, and the changes are committed in `a84f94a` (originally `4c463f4`).
 
 - **Status:** the briefing is complete and its decisions are approved as **design**. They are not results, and nothing has been implemented.
 - **Approved decisions** (full list in `docs/PROJECT_CONTEXT.md`, "Approved Phase 5 design decisions"):
   - Validation: a temporal validation and tuning protocol; a validation and test-set usage policy; Window 1 → Window 2 transfer evaluation.
   - Models: HistGradientBoosting as the challenger model.
-  - Calibration: a model calibration strategy that prioritizes a temporal calibration holdout, with ensemble investigation as a fallback if needed.
+  - Calibration: a model calibration strategy that prioritizes a temporal calibration holdout, with ensemble investigation as a fallback if needed. *(Superseded by the approved protocol, decision #1b: uncalibrated scores are the safe alternative; C-F is retrospective sensitivity only, never a fallback.)*
   - Statistical comparison: paired bootstrap evaluation; temporal-block bootstrap for the online queue evaluation when feasible, otherwise point estimates with sensitivity analysis.
   - Operational evaluation: the Analyst Review Queue use case; cost-sensitive evaluation with break-even analysis; review capacity as both fixed-K and time-based capacity; Precision@K and Recall@K; SLA scenarios of 1 h, 2 h and 4 h.
 - **Not in the repository:** the briefing's full text and detailed parameters. They will be documented when each item is implemented and reviewed.
@@ -405,8 +497,10 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (after the Phase 4 closure audit):* commit the approved Phase 4 changes. Done in `1f510f7`. The Phase 5 methodology and design briefing has since been completed (session at the top).
 
-*Historical (after the Phase 5 briefing):* review of the Phase 5 design documentation. The review is complete, and the documentation is committed in `4c463f4`.
+*Historical (after the Phase 5 briefing):* review of the Phase 5 design documentation. The review is complete, and the documentation is committed in `a84f94a` (originally `4c463f4`).
 
 *Historical (after the Phase 5 status sync):* Phase 5 experimental protocol preparation. Done: Phase 5A approved and closed on 2026-11-09 (session at the top).
 
-**Current:** Phase 5B, implementation of `docs/phase_5a_experimental_protocol.md`. Phase 5B has not started; it starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
+*Historical (after the Phase 5A closure):* Phase 5B, implementation of `docs/phase_5a_experimental_protocol.md`. Its preparation stage, Phase 5B-0, was implemented on 2026-11-11 (session at the top).
+
+**Current:** mentor review of Phase 5B-0, then Phase 5B-1 (the first implementation and experiment stage). Phase 5B-1 starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.

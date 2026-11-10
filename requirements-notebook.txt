@@ -1,0 +1,9 @@
+# Optional: only needed to open or re-run notebooks/01_data_understanding.ipynb.
+# The pipeline, tests and Phase 4/5 code do not need these.
+-r requirements.txt
+# Verified version (installed in the project's environment; provides IPython).
+ipykernel==7.1.0
+# Jupyter front end. NOT pinned and NOT verified: the project's verified
+# environment ran the notebook through an editor-integrated kernel and does not
+# have the `jupyter` metapackage installed. Any front end (Jupyter, VS Code) works.
+jupyter

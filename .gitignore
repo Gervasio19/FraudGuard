@@ -1,8 +1,13 @@
 # Python environments and caches
 .venv/
+venv/
+env/
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Secrets and local environment files
 .env
@@ -34,6 +39,13 @@ __pycache__/
 *.pt
 *.pth
 *.onnx
+
+# Large intermediate arrays (e.g. prediction or score vectors). Result JSON
+# summaries in reports/ are tracked; see docs/result_storage_policy.md.
+*.npy
+*.npz
+*.parquet
+*.feather
 
 # OS temporary files
 .DS_Store

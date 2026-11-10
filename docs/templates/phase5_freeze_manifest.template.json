@@ -1,0 +1,389 @@
+{
+  "manifest_type": "fraudguard_phase5_freeze_manifest",
+  "schema_version": 1,
+  "status": "template",
+  "notes": [
+    "Template only: no decision has been frozen and no experiment has been run.",
+    "pre_registered_configuration is fixed before any model is fitted (protocol Revision 4 and Addendum C). validation_stage_decisions are filled at protocol Section 4.2 step 9.",
+    "This manifest never stores metric values or predictions; it points to result files.",
+    "Paths are repository-relative. A frozen copy is committed before any test scoring."
+  ],
+  "protocol": {
+    "document": "docs/phase_5a_experimental_protocol.md",
+    "revision": 4,
+    "clarification_addendum": "Addendum C (Phase 5B-0)"
+  },
+  "provenance": {
+    "git_commit": null,
+    "git_dirty": null,
+    "created_at_utc": null,
+    "frozen_at_utc": null,
+    "approved_by": null,
+    "approval_date": null
+  },
+  "environment": {
+    "python": null,
+    "packages": null
+  },
+  "dataset": {
+    "path": "data/raw/creditcard.csv",
+    "expected_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+    "observed_sha256": null
+  },
+  "pre_registered_configuration": {
+    "seeds": {
+      "model_random_state": 42,
+      "e2_split_seed": 42,
+      "tcal_bootstrap_seed": 42,
+      "conditional_bootstrap_seed": 0,
+      "other_bootstrap_seed": 0,
+      "generator": "numpy.random.default_rng",
+      "generator_handling": "fresh generator per analysis: reproducible independent of execution order; streams from the same seed are not statistically independent; replicates are paired between models within an analysis"
+    },
+    "splits": {
+      "chronological": {
+        "train_time": [
+          0,
+          132928
+        ],
+        "validation_time": [
+          132929,
+          151328
+        ],
+        "test_time_start": 151329,
+        "source": "src/data/split.py (Phase 4a, unchanged)"
+      },
+      "train_subpartitions": {
+        "t_fit_time": [
+          0,
+          112553
+        ],
+        "t_cal_time": [
+          112555,
+          132928
+        ],
+        "calibration_holdout_option": "C-A",
+        "sensitivity_holdouts_time_start": {
+          "C-B_10pct": 124075,
+          "C-B_15pct": 119715
+        }
+      },
+      "validation_windows": {
+        "window_1_time": [
+          132929,
+          142280
+        ],
+        "window_2_time": [
+          142281,
+          151328
+        ],
+        "source": "src/data/temporal_windows.py (Phase 4c, unchanged)"
+      }
+    },
+    "features": {
+      "model_features": [
+        "V1",
+        "V2",
+        "V3",
+        "V4",
+        "V5",
+        "V6",
+        "V7",
+        "V8",
+        "V9",
+        "V10",
+        "V11",
+        "V12",
+        "V13",
+        "V14",
+        "V15",
+        "V16",
+        "V17",
+        "V18",
+        "V19",
+        "V20",
+        "V21",
+        "V22",
+        "V23",
+        "V24",
+        "V25",
+        "V26",
+        "V27",
+        "V28",
+        "Amount"
+      ],
+      "excluded_from_features": [
+        "Time"
+      ],
+      "target": "Class"
+    },
+    "models": {
+      "logistic_regression": {
+        "grid": {
+          "C": [
+            0.0001,
+            0.001,
+            0.01,
+            0.1,
+            1.0,
+            10.0
+          ],
+          "class_weight": [
+            null,
+            "balanced"
+          ]
+        },
+        "fixed": {
+          "penalty": "l2",
+          "solver": "lbfgs",
+          "max_iter": 1000,
+          "max_iter_on_convergence_warning": 5000,
+          "random_state": 42,
+          "preprocessing": "StandardScaler fitted on T_fit inside the Pipeline"
+        },
+        "n_configurations": 12
+      },
+      "hist_gradient_boosting": {
+        "grid": {
+          "learning_rate": [
+            0.05,
+            0.1
+          ],
+          "max_leaf_nodes": [
+            15,
+            31
+          ],
+          "min_samples_leaf": [
+            20,
+            200
+          ],
+          "class_weight": [
+            null,
+            "balanced"
+          ]
+        },
+        "fixed": {
+          "max_iter": 300,
+          "early_stopping": false,
+          "l2_regularization": 1.0,
+          "max_bins": 255,
+          "random_state": 42,
+          "preprocessing": "none (no scaler)"
+        },
+        "n_configurations": 16
+      },
+      "reference": {
+        "estimator": "DummyClassifier",
+        "strategy": "prior",
+        "role": "reported only"
+      },
+      "selection": {
+        "objective": "max validation average precision on uncalibrated ranking scores",
+        "tie_tolerance": 1e-12,
+        "tie_break": "simpler model first (protocol Section 5.4)"
+      }
+    },
+    "ranking_score": {
+      "method": "decision_function",
+      "dtype": "float64",
+      "positive_class": 1,
+      "tie_break_key": [
+        "score descending",
+        "Time ascending",
+        "file row position ascending"
+      ],
+      "equality": "exact float64 comparison, no tolerance"
+    },
+    "calibration": {
+      "method": "sigmoid (Platt)",
+      "holdout": "T_cal (C-A)",
+      "input": "decision_function",
+      "protocol_logit": "z = A * s + B; calibrated p = expit(z)",
+      "sklearn_mapping": "A = -a_, B = -b_ (sklearn: p = expit(-(a_ * s + b_)))",
+      "technical_failure": [
+        "fit error, non-convergence or non-finite parameters",
+        "slope A <= 0",
+        "SD of calibrated logits on T_cal < 1e-8 (population SD, ddof=0)"
+      ],
+      "constant_logit_sd": 1e-08,
+      "safe_alternative": "uncalibrated scores for the affected model only",
+      "status_per_model": "independent for LR and HGB",
+      "sensitivities": [
+        "isotonic",
+        "C-B 10%",
+        "C-B 15%"
+      ],
+      "c_f": "retrospective sensitivity only, on explicit request; never a fallback",
+      "amount_tercile_calibration": "not required in Phase 5B (Addendum C, item C2)",
+      "reliability_bins": {
+        "edges": [
+          0.0,
+          1e-06,
+          1e-05,
+          0.0001,
+          0.001,
+          0.01,
+          0.1,
+          1.0
+        ],
+        "rule": "[e_k, e_k+1) for every bin except the last, which is closed: [0.1, 1.0]",
+        "covers": "[0, 1]; every probability falls in exactly one bin",
+        "source": "protocol Section 6.5 decade edges; lower-tail bin [0, 1e-6) added by Addendum C, item C8"
+      },
+      "bootstrap_min_valid_share": 0.9,
+      "tcal_bootstrap": {
+        "scheme": "CBB",
+        "block_minutes": 15,
+        "n_replicates": 2000
+      }
+    },
+    "uncertainty": {
+      "conditional_bootstrap": {
+        "primary_scheme": "circular block bootstrap (CBB)",
+        "sensitivity_schemes": [
+          "moving block (MBB)",
+          "stationary"
+        ],
+        "block_minutes_reported": [
+          5,
+          10,
+          15,
+          30
+        ],
+        "e1_envelope_block_minutes": [
+          10,
+          15,
+          30
+        ],
+        "n_replicates_primary": 5000,
+        "n_replicates_sensitivity": 2000,
+        "interval": "percentile 95%"
+      },
+      "e2_heldout_splits": {
+        "block_seconds": 900,
+        "n_blocks": 21,
+        "n_selection_blocks": 10,
+        "buffer_seconds": 300,
+        "n_splits_attempted": 2000,
+        "min_heldout_frauds": 10,
+        "min_usable_splits": 1000,
+        "stability_threshold": 0.9
+      }
+    },
+    "operations": {
+      "fixed_k": [
+        25,
+        50,
+        100,
+        250,
+        500
+      ],
+      "fixed_k_windows": [
+        13,
+        25,
+        50,
+        125,
+        250
+      ],
+      "queue_capacity_per_hour": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "sla_hours": [
+        1,
+        2,
+        4
+      ],
+      "review_cost_ratio_R": [
+        5,
+        10,
+        20,
+        50,
+        100,
+        200,
+        500
+      ],
+      "amount_aware_cost_accounting": {
+        "c_r": [
+          1,
+          5,
+          10
+        ],
+        "alpha": [
+          0,
+          20
+        ],
+        "lambda": 1
+      },
+      "amount_aware_decision_policy": "excluded (decision #9)",
+      "review_minutes": [
+        5,
+        10,
+        15
+      ]
+    },
+    "reporting": {
+      "phase4_continuity_comparison": {
+        "source": "mentor review of Phase 5B-0 (2026-11-11); protocol Section 4.4, Addendum C5",
+        "columns": [
+          {
+            "label": "Phase 4 historical",
+            "model": "LogisticRegression C=1.0, class_weight=balanced, fitted on full train",
+            "score_representation": "predict_proba",
+            "source": "reports/phase4b_baseline_results.json (quoted, never recomputed)",
+            "role": "historical reference"
+          },
+          {
+            "label": "Phase 5 primary",
+            "model": "LogisticRegression C=1.0, class_weight=balanced, fitted on T_fit",
+            "score_representation": "decision_function",
+            "role": "primary"
+          },
+          {
+            "label": "Phase 5 diagnostic",
+            "model": "the same Phase 5 T_fit fit as the primary column",
+            "score_representation": "predict_proba",
+            "role": "diagnostic only; never used for model selection or primary evaluation"
+          }
+        ]
+      }
+    },
+    "champion_rule": {
+      "default": "logistic_regression",
+      "promote_hist_gradient_boosting_only_if": [
+        "E1 passes",
+        "E2 passes"
+      ],
+      "e2_not_estimable": "logistic_regression retained"
+    }
+  },
+  "validation_stage_decisions": {
+    "selected_configurations": {
+      "logistic_regression": null,
+      "hist_gradient_boosting": null
+    },
+    "calibration": {
+      "logistic_regression": {
+        "status": null,
+        "A": null,
+        "B": null
+      },
+      "hist_gradient_boosting": {
+        "status": null,
+        "A": null,
+        "B": null
+      }
+    },
+    "reliability_k_derived_edges": null,
+    "empirical_thresholds_per_cost_ratio": null,
+    "champion": null,
+    "development_results_file": null
+  },
+  "test_scope_acknowledgement": {
+    "acknowledged": null,
+    "acknowledged_by": null,
+    "date": null
+  }
+}

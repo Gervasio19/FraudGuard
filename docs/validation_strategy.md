@@ -33,7 +33,10 @@ A stratified random benchmark can preserve the overall class proportions and dis
   - The calibration holdout must remain separate from the final test partition.
   - Test data must not be used to fit or select the calibrator.
   - Final test evaluation happens only after calibration decisions are frozen.
-  - The exact location and size of the calibration holdout, including whether it lies inside or outside the existing validation partition, are awaiting detailed specification. Until an approved protocol specifies otherwise, the 70/15/15 chronological partitions above are unchanged.
+  - *Superseded (2026-11-09):* the holdout location and size were "awaiting detailed specification". The approved protocol (`docs/phase_5a_experimental_protocol.md`, Section 6.2, option C-A) now specifies them:
+    - `T_cal` is the last ~20% of the **training** partition, `Time` 112,555–132,928 (39,873 rows).
+    - Models are fitted on `T_fit`, `Time` 0–112,553.
+    - The holdout lies outside validation and test, and the 70/15/15 chronological partitions above are unchanged.
 - **Partition usage policy** (updated 2026-11-08 to match the approved methodology; it replaces an earlier blanket rule against using validation or test outcomes to tune model choices or thresholds):
   - **Train:** model fitting and training-related operations.
   - **Validation:** may be used for model selection, hyperparameter tuning, threshold selection and calibration decisions, following the approved Phase 5 protocol. Results selected on validation are development results, not independent performance estimates.
@@ -55,15 +58,18 @@ The Phase 3 validation design is finalized: use the chronological 70/15/15 parti
 
 The secondary benchmark is implemented in `src/data/random_split.py`. Rows are grouped by identical values in every column except `Class`. Groups must have a single label. Within each class, the groups are shuffled with `numpy.random.default_rng(42)` and allocated by cumulative row count to 70/15/15 train/validation/test. On the inspected data, this gives train 199,364 rows (344 frauds), validation 42,722 (74) and test 42,721 (74), with no duplicate group crossing partitions. All original rows are preserved. The design decisions above are unchanged. Results from this split are reported separately from the chronological results (see `docs/WORK_LOG.md`).
 
-## Phase 5 design note (approved design, not implemented; recorded 2026-11-08)
+## Phase 5 design note (approved design recorded 2026-11-08; protocol approved 2026-11-09; not yet run)
 
 The Phase 5 briefing approved these validation-related decisions. The chronological 70/15/15 partitions above are unchanged.
 
 - A temporal validation and tuning protocol.
 - A validation and test-set usage policy.
 - Window 1 → Window 2 transfer evaluation, using the Phase 4c temporal windows within validation.
-- Model calibration: a temporal calibration holdout has priority, with ensemble investigation as a fallback if needed.
+- Model calibration: a temporal calibration holdout has priority. *Superseded by the approved protocol (decision #1b):* the briefing's "ensemble investigation as a fallback, if needed" no longer applies.
+  - On a technical calibration failure, the affected model keeps its **uncalibrated scores**.
+  - The cross-fitted ensemble (C-F) is a retrospective sensitivity analysis only: never a fallback and never primary evidence.
+  - Calibration status is decided per model.
 - Paired bootstrap evaluation for model comparison.
 - For the online review-queue evaluation: temporal-block bootstrap when feasible; otherwise point estimates with sensitivity analysis.
 
-These are planned methods; none is implemented. The temporal-block bootstrap block length and the hyperparameter search space are awaiting detailed specification. The test partition stays untouched until final evaluation. The full list of Phase 5 decisions is in `docs/PROJECT_CONTEXT.md`.
+These are planned methods; none has been run. *Superseded (2026-11-09):* the block length and the hyperparameter search space were "awaiting detailed specification". They are now specified in the approved protocol: block lengths in Sections 7.2 and 7.4 (5/10/15/30 min reported, decision envelope 10/15/30 min); search space in Section 5. Phase 5B-0 implementation conventions (seeds, the E2 block buffer, the `decision_function` ranking score) are in protocol Appendix C. The test partition stays untouched until final evaluation. The full list of Phase 5 decisions is in `docs/PROJECT_CONTEXT.md` and protocol Section 13.0.

@@ -37,7 +37,7 @@ The project objectives are to:
 3. In later phases, compare suitable approaches using evaluation that reflects imbalance and the tradeoff between missed fraud and false alerts.
 4. Communicate findings and limitations clearly.
 
-Phases 2 and 3 document business understanding, basic data understanding, and the validation design. At that stage, the scope did not include model training or advanced exploratory analysis. The project scope has since expanded to model development and evaluation in later phases: Phase 4 trained and evaluated baseline models on validation data, and Phase 5 (approved design, not yet implemented) extends this work. The project does not include production deployment, live payment decisions, or claims of operational effectiveness. The dataset contains anonymized PCA components rather than the original transaction attributes, which also limits interpretation.
+Phases 2 and 3 document business understanding, basic data understanding, and the validation design. At that stage, the scope did not include model training or advanced exploratory analysis. The project scope has since expanded to model development and evaluation in later phases: Phase 4 trained and evaluated baseline models on validation data, and Phase 5 (approved protocol, not yet run) extends this work. The project does not include production deployment, live payment decisions, or claims of operational effectiveness. The dataset contains anonymized PCA components rather than the original transaction attributes, which also limits interpretation.
 
 ## Proposed evaluation considerations
 
@@ -54,7 +54,7 @@ For model comparisons, report at least:
 
 Threshold selection should reflect an agreed operational capacity and relative error costs. Because the dataset does not provide those costs or a deployment workflow, no classification threshold has been selected; one metric alone should not be treated as business value. Any later evaluation should state the split strategy, threshold, and limitations, and compare against a simple baseline.
 
-## Phase 5 design note (approved design, not implemented; recorded 2026-11-08)
+## Phase 5 design note (approved design recorded 2026-11-08; protocol approved 2026-11-09; not yet run)
 
 The Phase 5 briefing chose the **Analyst Review Queue** as the use case for operational evaluation. The approved evaluation design:
 
@@ -63,7 +63,12 @@ The Phase 5 briefing chose the **Analyst Review Queue** as the use case for oper
 - Precision@K and Recall@K;
 - SLA scenarios of 1, 2 and 4 hours.
 
-These are planned methods, not results. K values, the definition of time-based review capacity and cost ratios are awaiting detailed specification. No operational threshold has been set, and the statement above that a monetary cost function cannot yet be specified credibly still holds. The full list of Phase 5 decisions is in `docs/PROJECT_CONTEXT.md`.
+These are planned methods, not results. *Superseded (2026-11-09):* K values, the definition of time-based review capacity and the cost ratios were "awaiting detailed specification". The approved protocol (`docs/phase_5a_experimental_protocol.md`) now specifies them as **hypothetical scenario grids**, not facts about any real operation:
+- fixed-K: Section 9.2;
+- the online priority queue with SLA expiry: Section 9.3;
+- review-cost ratios R ∈ {5 … 500}: Section 8.2.
+
+The amount-aware decision policy is excluded; amount-aware cost accounting is kept as a sensitivity. No operational threshold has been set, and the statement above that a monetary cost function cannot yet be specified credibly still holds. The full list of Phase 5 decisions is in `docs/PROJECT_CONTEXT.md`.
 
 ## Dataset reference
 

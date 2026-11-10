@@ -2,11 +2,11 @@
 
 Reference for implemented and tested components. Methodology and status live in `docs/PROJECT_CONTEXT.md`, and experiment history and results in `docs/WORK_LOG.md`. This file describes only code that exists and is covered by tests.
 
-Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`).
+Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`), plus the Phase 5B-0 infrastructure modules (settings, ranking score, E2 blocks, reproducibility; no Phase 5 experiment exists).
 
 ## Running
 
-From the repository root, using the designated environment (`/Users/duc/Desktop/env/bin/python`):
+From the repository root, with the project environment activated (setup: `README.md`, "Getting started"):
 
 ```bash
 python -m unittest discover -s tests -v          # all tests
@@ -160,6 +160,34 @@ Top-level output keys:
 - `threshold_transfer`: `transferred_threshold`, `source_selection_f1`, `metrics`, `retrospective_optimum`, and `f1_difference` (transferred − retrospective).
 - `common_reference_thresholds` (added 2026-11-08; descriptive, separate from `threshold_transfer`): `role`, `note`, `decision_rule` (`y_score >= threshold`), `window_prevalence`, and `thresholds` with two entries, `fixed_0_5` and `full_validation_max_f1` (retrospective). Each has `threshold`, `description`, and `window_1`/`window_2` rows in the `evaluate_threshold` format. The rows are computed from the scores already in memory; nothing is refitted or rescored.
 
+## Phase 5B-0 infrastructure (no model is fitted by any of these modules)
+
+### `src/models/phase5_settings.py`
+Frozen, pre-registered Phase 5 configuration: seeds (model `random_state` 42, E2 split seed 42, `T_cal` calibrator-bootstrap seed 42, conditional bootstrap seed 0, other bootstraps 0), `T_fit`/`T_cal` and window boundaries, model grids, ranking-score method, calibration rules, bootstrap, E2, operational and champion-rule constants. `pre_registered_configuration()` returns a JSON-ready deep copy. The module only declares values (protocol Revision 4 and Appendix C).
+
+### `src/models/ranking_score.py`
+- `ranking_scores(estimator, X, positive_label=1)`: float64 `decision_function` of a fitted binary estimator. No `predict_proba` fallback; negated if the positive label is `classes_[0]`; rejects non-binary, unknown-label, mis-shaped or non-finite output.
+- `ranking_order(scores, times, positions)`: indices under the protocol Section 9.2 key (score descending, `Time` ascending, file position ascending; exact comparison).
+- `protocol_platt_parameters(a_, b_)` gives `(A, B) = (-a_, -b_)`; `calibrated_logits(s, A, B)` gives `A*s + B`; `is_numerically_constant(z)` is SD (ddof=0) < 1e-8 or any non-finite value.
+- `reliability_bin_index(p)` gives reliability-bin indices for the edges `RELIABILITY_BIN_EDGES` = (0, 1e-6, …, 1e-1, 1): bins `[e_k, e_k+1)`, with the last bin `[0.1, 1.0]` closed. Values outside [0, 1] are rejected (protocol Appendix C8).
+
+### `src/data/validation_blocks.py`
+E2 block convention (protocol Appendix C, item C4):
+- `block_edges(start, end_inclusive, 900)` builds half-open blocks; the final block may be partial (400 s on validation).
+- `assign_blocks(times, edges)` gives each timestamp's block index.
+- `heldout_keep_mask(times, edges, selection_blocks, 300)` keeps held-out rows outside the buffer zones `[a-300, a) U [b, b+300)`.
+- `draw_selection_blocks(n_splits, n_blocks, n_selection, seed)` draws from one sequential `default_rng(seed)`, each split as `sorted(rng.choice(...))`.
+
+### `src/reproducibility/dataset.py`
+`python -m src.reproducibility.dataset [--data PATH]`: SHA-256 of the raw file bytes against `76274b69…98551a89`. Exit 0 ok, 1 missing, 2 mismatch. Never parses rows. `verify_dataset` returns a record with a repository-relative path.
+
+### `src/reproducibility/manifest.py`
+- `python -m src.reproducibility.manifest environment` writes `reports/environment_manifest.json`: Python and package versions, dataset status, Git commit and dirty flag, seeds, and the SHA-256 of the pre-registered configuration.
+- `python -m src.reproducibility.manifest template` writes `docs/templates/phase5_freeze_manifest.template.json`.
+- `python -m src.reproducibility.manifest check-size FILE...` checks files against the size policy.
+- `validate_freeze_manifest` checks structure, drift against the settings and absolute paths. For `status: frozen` it also requires every step-9 field.
+- `write_result_json` enforces strict JSON, no absolute paths, the 5 MB target and the 10 MB hard limit (`docs/result_storage_policy.md`).
+
 ## Adding a dataset
 
 1. Add a `DatasetConfig` with the target, the features or exclusions, and optionally a time column and duplicate-group columns.
@@ -177,5 +205,9 @@ Feature columns must be numeric and finite. Categorical encoding and imputation 
 | `tests/test_baselines.py` | 38 | Config resolution, train-only scaler fitting, model invariance to validation/test changes, test rows never scored, refusal to evaluate on test, baseline behavior, LR probabilities and reproducibility, hand-checked metrics, compatibility with both splits, end-to-end CLI run, real-data result regression |
 | `tests/test_threshold.py` | 29 | Unique candidates, inclusive `>=` rule, hand-calculated precision/recall/F1/confusion counts, brute-force count check, undefined values, lowest-threshold tie-break, rejection of invalid inputs; window boundary balance, earliest-boundary ties, timestamp integrity, alignment, determinism, invalid timestamps |
 | `tests/test_threshold_analysis.py` | 21 | One fit on train only; one `predict_proba` on validation only; test rows never used; windows partition validation chronologically; Window 1 threshold transferred unchanged and independent of Window 2 labels; transfer metrics recomputed independently; common-reference thresholds (0.5 and full-validation max-F1) recomputed independently per window, with window counts summing to full-validation counts; reproducibility; strict JSON with NaN as null; full float precision; end-to-end CLI run; real-data result regression |
+| `tests/test_phase5_settings.py` | 16 | Approved seed values; strict-JSON configuration; grid sizes; boundaries consistent with Phase 4a; 21 validation blocks with a 400-s final block; seeded split draws (determinism, prefix stability, NumPy 2.3.2 snapshot) |
+| `tests/test_validation_blocks.py` | 18 | Half-open block edges; out-of-period and fractional timestamps rejected; buffer boundary seconds (a-301 kept, a-300 dropped, b dropped, b+300 kept); >= 301-s separation; no overlap; partial final block as held-out and as selection; no buffer beyond period edges; equal timestamps |
+| `tests/test_ranking_score.py` | 36 | `decision_function`-only interface on stub estimators; no `predict_proba` fallback; label orientation; unfitted scikit-learn API checks; `expit` saturation and its effect on AP; Section 9.2 ordering key; Platt sign mapping against the installed calibrator; numerical-constancy guard below, exactly at and above 1e-8, plus a ddof-sensitive case; reliability-bin assignment (`TestReliabilityBins`: edges start their bins, values just below an edge stay lower, lower-tail bin, closed last bin with p = 1.0, partition of [0, 1], rejection of out-of-range values); **`TestSyntheticFittedIntegration` (5 tests; mentor-requested):** small LR, HGB and sigmoid-calibrator fits on *generated* data only, confirming `classes_[1]` orientation, `predict_proba = expit(decision_function)`, negation for a first-sorted positive label, sklearn `a_ < 0` ⇔ protocol A > 0, calibrator input = `decision_function`, and A ≤ 0 under a reversed association. It never reads the dataset |
+| `tests/test_reproducibility.py` | 24 | Dataset check (missing, mismatch, ok, exit codes) on temporary files; strict JSON; absolute-path detection; no personal paths in code and onboarding docs; size policy; exact pins; environment manifest; freeze-manifest template, drift guard and frozen-status rules |
 
-Real-data tests are skipped when `data/raw/creditcard.csv` is absent.
+Real-data tests are skipped when `data/raw/creditcard.csv` is absent. `TestSyntheticFittedIntegration` is the only Phase 5B-0 test that fits models, and only on synthetic arrays.
