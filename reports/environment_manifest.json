@@ -1,0 +1,90 @@
+{
+  "manifest_type": "fraudguard_environment_manifest",
+  "schema_version": 1,
+  "generated_at_utc": "2026-11-10T18:03:40Z",
+  "scope": "Records the environment in which this file was generated. It does not certify that any other environment reproduces the project's results.",
+  "git": {
+    "commit": "7c4edcdc400b1f4332c7d961f845662f65685ea9",
+    "dirty": false
+  },
+  "python": {
+    "version": "3.13.6",
+    "implementation": "CPython"
+  },
+  "platform": {
+    "system": "Darwin",
+    "machine": "arm64"
+  },
+  "packages": {
+    "numpy": {
+      "role": "required",
+      "specifier": "==2.3.2",
+      "installed": "2.3.2"
+    },
+    "pandas": {
+      "role": "required",
+      "specifier": "==2.3.1",
+      "installed": "2.3.1"
+    },
+    "scikit-learn": {
+      "role": "required",
+      "specifier": "==1.9.1",
+      "installed": "1.9.1"
+    },
+    "scipy": {
+      "role": "required",
+      "specifier": "==1.17.1",
+      "installed": "1.17.1"
+    },
+    "matplotlib": {
+      "role": "required",
+      "specifier": "==3.10.5",
+      "installed": "3.10.5"
+    },
+    "seaborn": {
+      "role": "required",
+      "specifier": "==0.13.2",
+      "installed": "0.13.2"
+    },
+    "ipykernel": {
+      "role": "optional (notebook)",
+      "specifier": "==7.1.0",
+      "installed": "7.1.0"
+    },
+    "jupyter": {
+      "role": "optional (notebook)",
+      "specifier": null,
+      "installed": null
+    },
+    "joblib": {
+      "role": "transitive (scikit-learn)",
+      "specifier": null,
+      "installed": "1.6.0"
+    },
+    "threadpoolctl": {
+      "role": "transitive (scikit-learn)",
+      "specifier": null,
+      "installed": "3.7.0"
+    }
+  },
+  "dataset": {
+    "path": "data/raw/creditcard.csv",
+    "expected_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+    "observed_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+    "status": "ok"
+  },
+  "seeds": {
+    "model_random_state": 42,
+    "e2_split_seed": 42,
+    "tcal_bootstrap_seed": 42,
+    "conditional_bootstrap_seed": 0,
+    "other_bootstrap_seed": 0,
+    "generator": "numpy.random.default_rng",
+    "generator_handling": "fresh generator per analysis: reproducible independent of execution order; streams from the same seed are not statistically independent; replicates are paired between models within an analysis"
+  },
+  "configuration": {
+    "ranking_score_method": "decision_function",
+    "pre_registered_configuration_sha256": "86ab5adb747ec3f158f7206ec9e4a0de4f38a323be6615177399294ad1a04f85",
+    "source": "src/models/phase5_settings.py"
+  }
+}
