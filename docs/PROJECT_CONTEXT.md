@@ -3,10 +3,11 @@
 ## Verified repository facts
 
 - FraudGuard is an educational credit-card fraud detection project.
-- Current project phase: **Phase 5B-0 — protocol and documentation remediation and reproducibility infrastructure, complete and mentor-approved (2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state.
+- Current project phase: **Phase 5B-1 — E2 usability, `T_fit`/`T_cal` partition helper and three-track Phase 4 continuity, implemented and awaiting mentor review (2026-11-11); not committed.** Report: `docs/reports/PHASE_5B_1_REPORT.md`; results: `reports/phase5b1_results.json`. No hyperparameter grid, challenger, calibrator, E1/E2 statistic or test evaluation has been run.
+  - *Previous phase:* **Phase 5B-0 — protocol and documentation remediation and reproducibility infrastructure, complete and mentor-approved (2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state.
   - **Phase 5A** (experimental protocol) is approved by the project owner and closed (2026-11-09). The approved protocol is `docs/phase_5a_experimental_protocol.md`, Revision 4 plus closure, committed in `9b6d8e8` (originally `760ccc3`; renamed by the 2026-11-11 attribution rewrite, files identical; see WORK_LOG).
   - Phase 5B-0 adds the implementation clarification addendum (protocol Appendix C), frozen settings, the ranking-score interface, the E2 block and buffer convention, reproducibility tooling and the onboarding documentation. See `docs/reports/PHASE_5B_0_COMPLETION_REPORT.md`.
-  - **No Phase 5 model has been fitted or scored, and no Phase 5 experiment or result exists.**
+  - *Superseded by Phase 5B-1 (2026-11-11):* "No Phase 5 model has been fitted or scored, and no Phase 5 experiment or result exists." Phase 5B-1 fitted one model, the Phase 4 configuration on `T_fit`, for the continuity comparison only.
   - Earlier status: the Phase 5 design briefing was approved on 2026-11-08 (committed in `a84f94a`, originally `4c463f4`); see "Approved Phase 5 design decisions" below.
 - Phase 4 — Model Development & Evaluation is complete and mentor-approved (2026-11-08). Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`, and the Phase 4c specification treats it as a completed prerequisite. **Phase 4c (threshold analysis and temporal stability) is approved and complete, committed and pushed in `cffc32c`.** The retrospective documentation remediation of Phases 1–4 was completed on 2026-11-08: Phase 1 is committed in `0459921`, the Phase 2 report in `9b52a8a`, and the Phase 3 report in `ac178c3`. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7` (the Phase 4 completion commit).
 - Documentation: `README.md` (overview and usage), this file (architecture and methodology), `docs/WORK_LOG.md` (chronological history and experiment results), `docs/TECHNICAL_DOCUMENTATION.md` (component reference), and `docs/FINAL_REPORT.md` (pending placeholder). Topic documents: `docs/business_understanding.md` and `docs/validation_strategy.md`. Phase 5 protocol: `docs/phase_5a_experimental_protocol.md` (Revision 4; Appendix C = Phase 5B-0 clarifications). Policies and templates: `docs/result_storage_policy.md`, `docs/templates/phase5_freeze_manifest.template.json`. Dataset instructions: `data/README.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `docs/reports/phase1_foundation.md`; Phase 2: `docs/reports/phase2_data_understanding.md`; Phase 3: `docs/reports/phase3_data_splitting.md`; Phase 4: `docs/reports/phase4_model_development.md`, committed in `1f510f7`; Phase 5B-0: `docs/reports/PHASE_5B_0_COMPLETION_REPORT.md`).
@@ -15,7 +16,7 @@
 - Tests run from the repository root with `python -m unittest discover -s tests -v`, using the activated project environment. They use the standard-library `unittest`; pytest is not installed or required. Setup for new users: `README.md`, "Getting started".
 - Verified environment: Python 3.13.6 with the pinned versions above, recorded in `reports/environment_manifest.json`. It is the original developer's local environment, which must not be modified. Other environments are not verified.
 
-## Architecture (as of Phase 5B-0)
+## Architecture (as of Phase 5B-1)
 
 | Concern | Module |
 |---|---|
@@ -30,6 +31,9 @@
 | Frozen Phase 5 settings (Phase 5B-0) | `src/models/phase5_settings.py`: seeds, partitions, grids and protocol constants; declarations only |
 | Ranking-score interface (Phase 5B-0) | `src/models/ranking_score.py`: `decision_function` score, Section 9.2 ordering key, Platt sign mapping, constancy guard |
 | E2 blocks and buffer (Phase 5B-0) | `src/data/validation_blocks.py` |
+| `T_fit`/`T_cal` sub-partitions (Phase 5B-1) | `src/data/train_subpartitions.py`: frozen boundary 112,553 \| 112,555; train rows only; integrity and estimability checks |
+| E2 usable-split count (Phase 5B-1) | `src/evaluation/e2_usability.py`: validation timestamps and labels only; frozen rules (≥ 10 held-out frauds; ≥ 1,000 usable splits) |
+| Phase 4 continuity (Phase 5B-1) | `src/models/phase4_continuity.py`: three score tracks with a required `score_representation`; CLI `python -m src.models.run_phase5b1` |
 | Reproducibility (Phase 5B-0) | `src/reproducibility/dataset.py` (fingerprint check); `src/reproducibility/manifest.py` (environment manifest, freeze-manifest template, result-size policy) |
 
 Both splits return the same ordered categorical `train`/`validation`/`test` labels, so they plug into the same runner. Preprocessing lives inside each scikit-learn `Pipeline`, so `fit` on the training rows is the only place any statistic is learned. The runner refuses to evaluate on the test partition. Phase 4c fits once, scores validation once, and reuses those scores for every threshold and window analysis. Details: `docs/TECHNICAL_DOCUMENTATION.md`.
@@ -130,7 +134,14 @@ Phase 4 is complete, mentor-approved and committed on branch `main` (Phase 4c in
 
 The Phase 5 methodology and design briefing is complete, and its decisions are recorded above as approved design. The design documentation is committed in `a84f94a` (originally `4c463f4`). Phase 5A (experimental protocol) is approved and closed (committed in `760ccc3`). *Historical:* the next task recorded here before the protocol was "Phase 5 experimental protocol preparation"; that is done.
 
-**Current state:** Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) is complete and mentor-approved (2026-11-11), committed in `7c4edcd`, with the environment manifest in `aa67802`. **Next task:** Phase 5B-1, the first implementation and experiment stage of the protocol. It starts only on explicit approval and proceeds with review between stages. Seeds, the ranking score (`decision_function`), the E2 buffer convention and the result-storage policy are frozen before it (protocol Appendix C). Do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. The Phase 4c thresholds are analytical; no operational threshold has been chosen. See `docs/WORK_LOG.md` for details.
+*Historical (end of Phase 5B-0):* Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) is complete and mentor-approved (2026-11-11), committed in `7c4edcd`, with the environment manifest in `aa67802`. **Next task:** Phase 5B-1, the first implementation and experiment stage of the protocol. It starts only on explicit approval and proceeds with review between stages. Seeds, the ranking score (`decision_function`), the E2 buffer convention and the result-storage policy are frozen before it (protocol Appendix C). Do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. The Phase 4c thresholds are analytical; no operational threshold has been chosen. See `docs/WORK_LOG.md` for details.
+
+**Current state (2026-11-11):** Phase 5B-1 is implemented and awaiting mentor review; it is not committed. Results (development, validation only):
+- `T_fit` 159,491 rows / 356 frauds and `T_cal` 39,873 / 28, exactly as in protocol Section 3.1; no timestamp spans both.
+- E2: 1,984 of 2,000 splits usable, so E2 is estimable under the pre-registered rule. No E2 statistic has been computed.
+- Continuity, validation AP: 0.8397 historical (`predict_proba`, full train, quoted); 0.8536 Phase 5 primary (`decision_function`, `T_fit`); 0.8536 diagnostic (`predict_proba`, same fit).
+
+**Next task:** mentor review of Phase 5B-1. Then, only on approval, protocol Section 4.2 step 2 (fit the 28 configurations on `T_fit`, score `T_cal` and validation once each). The test partition stays untouched until final evaluation. Do not write the final report until the project is complete.
 
 ## Assumptions
 

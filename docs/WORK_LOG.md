@@ -2,15 +2,35 @@
 
 ## Current status
 
-- **Current phase:** Phase 5 — **Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) complete and mentor-approved (final approval reported by the owner, 2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state. The manifest is a snapshot of the clean tree at `7c4edcd` (`dirty: false`). Phase 5B-1 has not started (session at the top).
+- **Current phase:** Phase 5 — **Phase 5B-1 (E2 usability, `T_fit`/`T_cal` partition helper, three-track Phase 4 continuity) implemented and verified, awaiting mentor review (2026-11-11); not committed.** See the Phase 5B-1 session below and `docs/reports/PHASE_5B_1_REPORT.md`.
+- *Previous status line (end of Phase 5B-0):* Phase 5 — **Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) complete and mentor-approved (final approval reported by the owner, 2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state. The manifest is a snapshot of the clean tree at `7c4edcd` (`dirty: false`). Phase 5B-1 has not started (session at the top).
   - Phase 5A (experimental protocol) was approved by the project owner and closed on 2026-11-09, committed in `9b6d8e8` (originally `760ccc3`; see the commit-ID mapping below).
   - The frozen protocol is `docs/phase_5a_experimental_protocol.md` (Revision 4 plus closure), with implementation clarifications in its Appendix C (Phase 5B-0).
   - **No Phase 5 model has been fitted or scored; no Phase 5 experiment or result exists.**
-  - Next task: Phase 5B-1, only on explicit approval.
+  - Next task: Phase 5B-1, only on explicit approval. *(Done 2026-11-11, awaiting review; next is protocol Section 4.2 step 2, only on approval.)*
   - *Superseded wording (2026-11-09):* "Phase 5B (implementation) has not started; no Phase 5 code … exist". Phase 5B-0 added infrastructure code, but no experiment code.
 - **Phase 4:** Model Development & Evaluation, **complete and mentor-approved (2026-11-08)**. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. The retrospective documentation remediation of Phases 1–4 is complete (see the sessions below). The Phase 1, Phase 2 and Phase 3 reports are committed. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7`.
 - **Key commits on branch `main`** (verified 2026-11-08): the Phase 1 remediation (`0459921`), the Phase 2 report (`9b52a8a`), the Phase 3 report (`ac178c3`), the Phase 4 completion (`1f510f7`, `Complete Phase 4 model development and evaluation`) and the Phase 5 design documentation (`a84f94a`, originally `4c463f4`, `docs: finalize approved Phase 5 design documentation`). Use `git log` for the current `HEAD`.
 - **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`; Phase 4: `phase4_model_development.md`, committed in `1f510f7`; Phase 5B-0: `PHASE_5B_0_COMPLETION_REPORT.md`; created in the sessions below). Phase 5 protocol: `docs/phase_5a_experimental_protocol.md`. Policy: `docs/result_storage_policy.md`. Dataset: `data/README.md`.
+
+## Phase 5B-1 session — E2 usability, T_fit/T_cal partition, Phase 4 continuity (2026-11-11)
+
+Started on the project owner's explicit instruction. Owner decisions applied: a chronological `T_fit`/`T_cal` split (no shuffling; fraud counts and estimability checked; test untouched), and three separate score tracks (historical Phase 4 `predict_proba` on full train; Phase 5 primary `decision_function` on `T_fit`; Phase 5 diagnostic `predict_proba` on the same fit). No locked Phase 5B-0 value was changed; the configuration SHA-256 is still `86ab5adb…`.
+
+- **New files:** `src/data/train_subpartitions.py`, `src/evaluation/e2_usability.py`, `src/models/phase4_continuity.py`, `src/models/run_phase5b1.py`, `tests/test_phase5b1.py` (34 tests), `reports/phase5b1_results.json` (14,326 B), `docs/reports/PHASE_5B_1_REPORT.md`. No Phase 4 or Phase 5B-0 module changed.
+- **T_fit/T_cal [V]:** `T_fit` = `Time` 0–112,553, 159,491 rows, 356 frauds; `T_cal` = 112,555–132,928, 39,873 rows, 28 frauds. Equal to protocol Section 3.1. No timestamp spans both; both sides are estimable. Model-input twins crossing `T_fit`/`T_cal`/validation: 566 groups, 0 fraud rows.
+- **E2 usability [V]:** 2,000 attempted (1,990 distinct), **1,984 usable**, 16 skipped (held-out frauds 7–9). **E2 estimable** (≥ 1,000). Buffered held-out frauds: median 20, range 7–34. No E2 statistic was computed.
+- **Continuity [V]** (validation, 56 frauds), as AP / ROC-AUC:
+  - historical (quoted): 0.839660 / 0.981517;
+  - Phase 5 primary (`decision_function`, `T_fit`): 0.853574 / 0.981031;
+  - diagnostic (`predict_proba`, same fit): identical to the primary. There are no saturation ties (max logit 31.55; 41,807 unique scores in both representations).
+  - The fit converged in 40 iterations with `max_iter` 1,000.
+- **Isolation [V]:** test rows are removed before any label access. Results are invariant to flipping test labels and corrupting test features. Rerunning the CLI gives a byte-identical file.
+- **Tests [V]:** focused 34/34 (with `-W error::FutureWarning`); full suite 275/275, 0 skipped.
+- **Findings:**
+  - `penalty="l2"` is deprecated in scikit-learn 1.9.1, so it is not passed; L2 is the default.
+  - Fitted floats depend on input memory layout at about 1e-15 (`DataFrame.copy()`); counts and AP are unaffected.
+- **Not done:** the grid, HGB, calibration, E1/E2 statistics, operational analyses and any test evaluation. No commit.
 
 ## Local Git attribution rewrite (2026-11-11; owner-approved; pushed 2026-11-11)
 
@@ -503,4 +523,6 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (after the Phase 5A closure):* Phase 5B, implementation of `docs/phase_5a_experimental_protocol.md`. Its preparation stage, Phase 5B-0, was implemented on 2026-11-11 (session at the top).
 
-**Current:** mentor review of Phase 5B-0, then Phase 5B-1 (the first implementation and experiment stage). Phase 5B-1 starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
+*Historical (after Phase 5B-0):* mentor review of Phase 5B-0, then Phase 5B-1. Done: Phase 5B-0 committed (`7c4edcd`, `aa67802`, `726a354`); Phase 5B-1 implemented 2026-11-11 (session at the top).
+
+**Current:** mentor review of Phase 5B-1. Then, only on approval, protocol Section 4.2 step 2: fit the 28 configurations on `T_fit` and score `T_cal` and validation once each. *Earlier text of this entry:* mentor review of Phase 5B-0, then Phase 5B-1 (the first implementation and experiment stage). Phase 5B-1 starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.

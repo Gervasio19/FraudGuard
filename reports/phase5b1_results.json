@@ -1,0 +1,546 @@
+{
+  "phase": "5B-1 (E2 usability, T_fit/T_cal partition, Phase 4 continuity)",
+  "result_type": "development (validation); no selection, tuning, calibration or test evaluation",
+  "provenance": {
+    "dataset": {
+      "path": "data/raw/creditcard.csv",
+      "expected_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+      "observed_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+      "status": "ok"
+    },
+    "git": {
+      "commit": "726a354950cb4108737d9bc125c40051d84b413d",
+      "dirty": true
+    },
+    "environment": {
+      "python": "3.13.6",
+      "numpy": "2.3.2",
+      "pandas": "2.3.1",
+      "scikit_learn": "1.9.1",
+      "scipy": "1.17.1"
+    },
+    "seeds": {
+      "model_random_state": 42,
+      "e2_split_seed": 42,
+      "tcal_bootstrap_seed": 42,
+      "conditional_bootstrap_seed": 0,
+      "other_bootstrap_seed": 0,
+      "generator": "numpy.random.default_rng",
+      "generator_handling": "fresh generator per analysis: reproducible independent of execution order; streams from the same seed are not statistically independent; replicates are paired between models within an analysis"
+    },
+    "pre_registered_configuration_sha256": "86ab5adb747ec3f158f7206ec9e4a0de4f38a323be6615177399294ad1a04f85"
+  },
+  "test_isolation": {
+    "test_rows_removed_before_label_access": 42721,
+    "max_time_in_processed_rows": 151328,
+    "partitions_processed": [
+      "train",
+      "validation"
+    ],
+    "statement": "No test row reached any count, fit, score or metric in this run."
+  },
+  "t_fit_t_cal_partition": {
+    "boundaries": {
+      "t_fit_time": [
+        0,
+        112553
+      ],
+      "t_cal_time": [
+        112555,
+        132928
+      ],
+      "rule": "T_fit = Time <= 112,553; T_cal = 112,555 <= Time <= 132,928; no shuffling"
+    },
+    "temporal_integrity": {
+      "t_fit_time_range": [
+        0,
+        112553
+      ],
+      "t_cal_time_range": [
+        112555,
+        132928
+      ],
+      "gap_seconds_between_last_t_fit_and_first_t_cal": 2,
+      "max_t_fit_time_lt_min_t_cal_time": true,
+      "n_timestamps_spanning_both": 0
+    },
+    "counts": {
+      "t_fit": {
+        "n_rows": 159491,
+        "n_positive": 356,
+        "n_negative": 159135,
+        "prevalence": 0.0022321008708955366,
+        "estimable": true
+      },
+      "t_cal": {
+        "n_rows": 39873,
+        "n_positive": 28,
+        "n_negative": 39845,
+        "prevalence": 0.000702229578913049,
+        "estimable": true
+      },
+      "all_estimable": true
+    },
+    "matches_protocol_section_3_1": true,
+    "rows_cover_train_exactly_once": true,
+    "file_order_preserved_within_subpartitions": true,
+    "model_input_twins": {
+      "key_model_inputs": "V1-V28 + Amount",
+      "n_groups_crossing_t_fit_t_cal_validation": 566,
+      "rows_in_crossing_groups": {
+        "t_fit": 140,
+        "t_cal": 800,
+        "validation": 824
+      },
+      "fraud_rows_in_crossing_groups": 0,
+      "key_all_columns_except_target_crossing_groups": 0,
+      "note": "Descriptive only (as in Phases 3-4); twins are potential leakage of unmeasured effect, not proven leakage. Test rows are excluded from this count."
+    },
+    "estimability_rule": "each sub-partition must hold >= 1 positive and >= 1 negative row; the protocol pre-registers no other minimum fraud count for T_fit or T_cal"
+  },
+  "e2_usability": {
+    "settings": {
+      "seed": 42,
+      "generator": "numpy.random.default_rng, sequential draws",
+      "n_splits_attempted": 2000,
+      "n_blocks": 21,
+      "n_selection_blocks": 10,
+      "block_seconds": 900,
+      "buffer_seconds": 300,
+      "intervals": "half-open [a, b); buffer [a-300, a) U [b, b+300)",
+      "block_edges": [
+        132929,
+        133829,
+        134729,
+        135629,
+        136529,
+        137429,
+        138329,
+        139229,
+        140129,
+        141029,
+        141929,
+        142829,
+        143729,
+        144629,
+        145529,
+        146429,
+        147329,
+        148229,
+        149129,
+        150029,
+        150929,
+        151329
+      ]
+    },
+    "validation": {
+      "n_rows": 42722,
+      "n_frauds": 56,
+      "per_block": [
+        {
+          "block": 0,
+          "start": 132929,
+          "end_exclusive": 133829,
+          "n_rows": 1945,
+          "n_frauds": 2
+        },
+        {
+          "block": 1,
+          "start": 133829,
+          "end_exclusive": 134729,
+          "n_rows": 1930,
+          "n_frauds": 1
+        },
+        {
+          "block": 2,
+          "start": 134729,
+          "end_exclusive": 135629,
+          "n_rows": 1953,
+          "n_frauds": 6
+        },
+        {
+          "block": 3,
+          "start": 135629,
+          "end_exclusive": 136529,
+          "n_rows": 1932,
+          "n_frauds": 0
+        },
+        {
+          "block": 4,
+          "start": 136529,
+          "end_exclusive": 137429,
+          "n_rows": 2013,
+          "n_frauds": 1
+        },
+        {
+          "block": 5,
+          "start": 137429,
+          "end_exclusive": 138329,
+          "n_rows": 2112,
+          "n_frauds": 0
+        },
+        {
+          "block": 6,
+          "start": 138329,
+          "end_exclusive": 139229,
+          "n_rows": 2123,
+          "n_frauds": 4
+        },
+        {
+          "block": 7,
+          "start": 139229,
+          "end_exclusive": 140129,
+          "n_rows": 2202,
+          "n_frauds": 3
+        },
+        {
+          "block": 8,
+          "start": 140129,
+          "end_exclusive": 141029,
+          "n_rows": 2202,
+          "n_frauds": 2
+        },
+        {
+          "block": 9,
+          "start": 141029,
+          "end_exclusive": 141929,
+          "n_rows": 2126,
+          "n_frauds": 3
+        },
+        {
+          "block": 10,
+          "start": 141929,
+          "end_exclusive": 142829,
+          "n_rows": 2205,
+          "n_frauds": 3
+        },
+        {
+          "block": 11,
+          "start": 142829,
+          "end_exclusive": 143729,
+          "n_rows": 2197,
+          "n_frauds": 6
+        },
+        {
+          "block": 12,
+          "start": 143729,
+          "end_exclusive": 144629,
+          "n_rows": 2152,
+          "n_frauds": 0
+        },
+        {
+          "block": 13,
+          "start": 144629,
+          "end_exclusive": 145529,
+          "n_rows": 2029,
+          "n_frauds": 2
+        },
+        {
+          "block": 14,
+          "start": 145529,
+          "end_exclusive": 146429,
+          "n_rows": 2171,
+          "n_frauds": 4
+        },
+        {
+          "block": 15,
+          "start": 146429,
+          "end_exclusive": 147329,
+          "n_rows": 2184,
+          "n_frauds": 1
+        },
+        {
+          "block": 16,
+          "start": 147329,
+          "end_exclusive": 148229,
+          "n_rows": 2219,
+          "n_frauds": 5
+        },
+        {
+          "block": 17,
+          "start": 148229,
+          "end_exclusive": 149129,
+          "n_rows": 2121,
+          "n_frauds": 4
+        },
+        {
+          "block": 18,
+          "start": 149129,
+          "end_exclusive": 150029,
+          "n_rows": 2095,
+          "n_frauds": 4
+        },
+        {
+          "block": 19,
+          "start": 150029,
+          "end_exclusive": 150929,
+          "n_rows": 1936,
+          "n_frauds": 3
+        },
+        {
+          "block": 20,
+          "start": 150929,
+          "end_exclusive": 151329,
+          "n_rows": 875,
+          "n_frauds": 2
+        }
+      ]
+    },
+    "decision": {
+      "n_attempted": 2000,
+      "n_usable": 1984,
+      "n_skipped": 16,
+      "usable_share": 0.992,
+      "min_heldout_frauds_rule": "usable iff buffered held-out frauds >= 10",
+      "min_usable_splits_rule": "E2 estimable iff n_usable >= 1000",
+      "e2_estimable": true,
+      "consequence": "E2 outputs may be computed in the E2 stage (usable splits only)"
+    },
+    "diagnostics": {
+      "n_distinct_splits": 1990,
+      "first_three_splits": [
+        [
+          1,
+          4,
+          6,
+          9,
+          10,
+          13,
+          14,
+          15,
+          17,
+          20
+        ],
+        [
+          2,
+          5,
+          6,
+          7,
+          11,
+          13,
+          14,
+          16,
+          19,
+          20
+        ],
+        [
+          1,
+          2,
+          3,
+          6,
+          8,
+          11,
+          15,
+          18,
+          19,
+          20
+        ]
+      ],
+      "heldout_frauds": {
+        "min": 7.0,
+        "p05": 12.0,
+        "p25": 17.0,
+        "median": 20.0,
+        "p75": 23.0,
+        "p95": 27.0,
+        "max": 34.0,
+        "mean": 19.704
+      },
+      "heldout_frauds_histogram": {
+        "7": 1,
+        "8": 5,
+        "9": 10,
+        "10": 19,
+        "11": 26,
+        "12": 40,
+        "13": 65,
+        "14": 70,
+        "15": 112,
+        "16": 132,
+        "17": 151,
+        "18": 179,
+        "19": 164,
+        "20": 181,
+        "21": 150,
+        "22": 168,
+        "23": 130,
+        "24": 121,
+        "25": 76,
+        "26": 65,
+        "27": 45,
+        "28": 32,
+        "29": 31,
+        "30": 12,
+        "31": 10,
+        "32": 3,
+        "33": 1,
+        "34": 1
+      },
+      "heldout_frauds_usable_splits": {
+        "min": 10.0,
+        "p05": 13.0,
+        "p25": 17.0,
+        "median": 20.0,
+        "p75": 23.0,
+        "p95": 27.0,
+        "max": 34.0,
+        "mean": 19.793850806451612
+      },
+      "heldout_rows": {
+        "min": 9407.0,
+        "p05": 12308.1,
+        "p25": 14053.5,
+        "median": 15174.0,
+        "p75": 16256.5,
+        "p95": 17920.649999999998,
+        "max": 20580.0,
+        "mean": 15142.699
+      },
+      "heldout_row_share_of_validation": {
+        "min": 0.2201910022939001,
+        "p05": 0.28809746734703434,
+        "p25": 0.3289522962408127,
+        "median": 0.35518000093628577,
+        "p75": 0.3805182341650672,
+        "p95": 0.41947123262019564,
+        "max": 0.48171902064510086,
+        "mean": 0.3544473339263143
+      },
+      "selection_frauds": {
+        "min": 15.0,
+        "p05": 20.0,
+        "p25": 24.0,
+        "median": 27.0,
+        "p75": 30.0,
+        "p95": 34.0,
+        "max": 40.0,
+        "mean": 26.7505
+      },
+      "selection_rows": {
+        "min": 19021.0,
+        "p05": 19405.95,
+        "p25": 19732.0,
+        "median": 20526.5,
+        "p75": 20943.25,
+        "p95": 21249.0,
+        "max": 21608.0,
+        "mean": 20352.003
+      },
+      "buffer_dropped_rows": {
+        "min": 2104.0,
+        "p05": 4835.65,
+        "p25": 6225.75,
+        "median": 7086.0,
+        "p75": 8316.0,
+        "p95": 9798.4,
+        "max": 12431.0,
+        "mean": 7227.298
+      },
+      "buffer_dropped_frauds": {
+        "min": 0.0,
+        "p05": 3.0,
+        "p25": 7.0,
+        "median": 9.0,
+        "p75": 12.0,
+        "p95": 17.0,
+        "max": 23.0,
+        "mean": 9.5455
+      },
+      "selection_frauds_plus_heldout_plus_dropped_equals_total": true
+    }
+  },
+  "phase4_continuity": {
+    "fit": {
+      "estimator": "LogisticRegression + StandardScaler (fitted on T_fit rows only)",
+      "params": {
+        "C": 1.0,
+        "class_weight": "balanced",
+        "solver": "lbfgs",
+        "penalty": "l2 (scikit-learn default)",
+        "max_iter": 1000,
+        "random_state": 42
+      },
+      "n_fit_rows": 159491,
+      "n_fit_positive": 356,
+      "n_iter": 40,
+      "convergence_warnings": [],
+      "refit_with_max_iter_5000": false,
+      "proba_equals_expit_decision_max_abs_diff": 0.0
+    },
+    "tracks": {
+      "phase4_historical": {
+        "score_representation": "predict_proba",
+        "role": "historical reference (quoted, never recomputed)",
+        "fit_rows": "full train partition (Time 0-132,928)",
+        "source": "reports/phase4b_baseline_results.json",
+        "metrics": {
+          "n_rows": 42722,
+          "n_positive": 56,
+          "average_precision": 0.8396604620788174,
+          "roc_auc": 0.9815171498215374
+        }
+      },
+      "phase5_primary": {
+        "fit_rows": "T_fit (Time 0-112,553)",
+        "source": "computed in Phase 5B-1 (src/models/run_phase5b1.py)",
+        "score_representation": "decision_function",
+        "role": "primary",
+        "metrics": {
+          "n_rows": 42722,
+          "n_positive": 56,
+          "average_precision": 0.8535739141462702,
+          "roc_auc": 0.9810308140975417
+        },
+        "score_diagnostics": {
+          "n_scores": 42722,
+          "n_unique": 41807,
+          "n_rows_in_tied_groups": 1378,
+          "n_equal_to_1": 0,
+          "max": 31.55379701060768,
+          "min": -48.688831221396356
+        }
+      },
+      "phase5_diagnostic": {
+        "fit_rows": "T_fit (Time 0-112,553)",
+        "source": "computed in Phase 5B-1 (src/models/run_phase5b1.py)",
+        "score_representation": "predict_proba",
+        "role": "diagnostic only; never used for hyperparameter selection, the champion decision, thresholds, calibration or any primary evaluation",
+        "metrics": {
+          "n_rows": 42722,
+          "n_positive": 56,
+          "average_precision": 0.8535739141462702,
+          "roc_auc": 0.9810308140975417
+        },
+        "score_diagnostics": {
+          "n_scores": 42722,
+          "n_unique": 41807,
+          "n_rows_in_tied_groups": 1378,
+          "n_equal_to_1": 0,
+          "max": 0.9999999999999802,
+          "min": 7.156641627323465e-22
+        }
+      }
+    },
+    "differences": {
+      "primary_minus_historical": {
+        "average_precision": 0.013913452067452758,
+        "roc_auc": -0.00048633572399570113,
+        "interpretation": "joint effect of T_fit (removing T_cal), the 5.66 h gap and the representation change"
+      },
+      "diagnostic_minus_historical": {
+        "average_precision": 0.013913452067452758,
+        "roc_auc": -0.00048633572399570113,
+        "interpretation": "data change only (T_fit and the gap; same representation); diagnostic"
+      },
+      "primary_minus_diagnostic": {
+        "average_precision": 0.0,
+        "roc_auc": 0.0,
+        "interpretation": "representation only (same fit): predict_proba saturation ties"
+      }
+    },
+    "notes": [
+      "Development (validation) figures; no selection is made from them.",
+      "Phase 4 results are quoted from reports/phase4b_baseline_results.json and never rewritten."
+    ]
+  }
+}

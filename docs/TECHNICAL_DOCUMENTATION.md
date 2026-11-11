@@ -2,7 +2,7 @@
 
 Reference for implemented and tested components. Methodology and status live in `docs/PROJECT_CONTEXT.md`, and experiment history and results in `docs/WORK_LOG.md`. This file describes only code that exists and is covered by tests.
 
-Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`), plus the Phase 5B-0 infrastructure modules (settings, ranking score, E2 blocks, reproducibility; no Phase 5 experiment exists).
+Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`), plus the Phase 5B-0 infrastructure modules (settings, ranking score, E2 blocks, reproducibility) and the Phase 5B-1 modules (`T_fit`/`T_cal` sub-partitions, E2 usability, three-track Phase 4 continuity; implemented 2026-11-11, awaiting mentor review).
 
 ## Running
 
@@ -13,6 +13,7 @@ python -m unittest discover -s tests -v          # all tests
 python -m src.models.run_baselines               # Phase 4b experiments
 python -m src.models.run_baselines --data PATH --output PATH --random-state 42
 python -m src.models.run_threshold_analysis     # Phase 4c threshold analysis (same options)
+python -m src.models.run_phase5b1                # Phase 5B-1 (--output PATH)
 ```
 
 Both runners read `data/raw/creditcard.csv` by default. They write `reports/phase4b_baseline_results.json` (about 5 seconds) and `reports/phase4c_threshold_results.json` (about 9.5 MB, about 3 seconds).
@@ -188,6 +189,34 @@ E2 block convention (protocol Appendix C, item C4):
 - `validate_freeze_manifest` checks structure, drift against the settings and absolute paths. For `status: frozen` it also requires every step-9 field.
 - `write_result_json` enforces strict JSON, no absolute paths, the 5 MB target and the 10 MB hard limit (`docs/result_storage_policy.md`).
 
+## Phase 5B-1 modules
+
+### `src/data/train_subpartitions.py`
+- `assign_train_subpartitions(times)` labels training rows `t_fit` (`Time` ≤ 112,553) or `t_cal` (112,555 ≤ `Time` ≤ 132,928). It returns an ordered categorical Series in input order and reads no label. It refuses any `Time` > 132,928 (validation or test rows), any timestamp strictly between 112,553 and 112,555, and negative, fractional or non-finite timestamps.
+- `check_temporal_integrity(times, labels)` requires both sides non-empty, `max(T_fit Time) < min(T_cal Time)` and no shared timestamp. It returns the time ranges.
+- `summarize_subpartitions(labels, y)` gives rows, frauds, non-frauds and prevalence per side, with `estimable` = at least one positive and one negative. The protocol sets no other minimum. `require_estimable` raises otherwise.
+
+### `src/evaluation/e2_usability.py`
+- `split_counts(times, y, edges, draws)` gives per-split counts of selection-half, buffered held-out and buffer-dropped rows and frauds. It uses `heldout_keep_mask` and raises on any timestamp outside the edges.
+- `usability_decision(heldout_frauds)`: a split is usable iff held-out frauds ≥ 10; E2 is estimable iff at least 1,000 splits are usable.
+- `e2_usability(times, y)` runs the frozen procedure: 21 blocks from 132,929, 2,000 draws with `default_rng(42)`, a 300-s buffer. It returns settings, per-block counts, the decision and distribution diagnostics. Inputs are validation timestamps and labels only.
+
+### `src/models/phase4_continuity.py`
+- `build_continuity_lr(max_iter)`: StandardScaler + `LogisticRegression(C=1, class_weight="balanced", solver="lbfgs", random_state=42)`. L2 is the scikit-learn default; `penalty=` is not passed because it is deprecated in scikit-learn ≥ 1.8.
+- `quote_phase4_historical(path)` reads track 1 from `reports/phase4b_baseline_results.json` (read-only).
+- `fit_phase5_tracks(fit_rows, validation_rows, config)` fits once on `T_fit` through `experiment.fit_and_score`, refitting with `max_iter` 5,000 only on a convergence warning. It scores validation with `decision_function` (track 2, primary) and `predict_proba` (track 3, diagnostic), and returns AP, ROC-AUC and tie/saturation diagnostics.
+- `validate_score_tracks(tracks)` requires the three tracks, each with `score_representation`, `role`, `fit_rows`, `source` and `metrics`. Representations must match the frozen `reporting.phase4_continuity_comparison`.
+- `continuity_comparison(historical, phase5)` assembles the tracks and the differences 2−1, 3−1 and 2−3.
+
+### `src/models/run_phase5b1.py`
+`python -m src.models.run_phase5b1 [--output PATH]`:
+1. Checks the dataset SHA-256 and aborts on mismatch.
+2. Reads the CSV and removes test rows (`drop_test_rows`) straight after the label-free chronological assignment.
+3. Runs the partition step, including descriptive model-input twin counts across `T_fit`/`T_cal`/validation, then E2 usability, then continuity.
+4. Writes strict JSON with provenance (dataset, Git, versions, seeds, configuration SHA-256) via `write_result_json`.
+
+`compute(df, config, phase4b_path)` is the pure core used by the tests.
+
 ## Adding a dataset
 
 1. Add a `DatasetConfig` with the target, the features or exclusions, and optionally a time column and duplicate-group columns.
@@ -208,6 +237,7 @@ Feature columns must be numeric and finite. Categorical encoding and imputation 
 | `tests/test_phase5_settings.py` | 16 | Approved seed values; strict-JSON configuration; grid sizes; boundaries consistent with Phase 4a; 21 validation blocks with a 400-s final block; seeded split draws (determinism, prefix stability, NumPy 2.3.2 snapshot) |
 | `tests/test_validation_blocks.py` | 18 | Half-open block edges; out-of-period and fractional timestamps rejected; buffer boundary seconds (a-301 kept, a-300 dropped, b dropped, b+300 kept); >= 301-s separation; no overlap; partial final block as held-out and as selection; no buffer beyond period edges; equal timestamps |
 | `tests/test_ranking_score.py` | 36 | `decision_function`-only interface on stub estimators; no `predict_proba` fallback; label orientation; unfitted scikit-learn API checks; `expit` saturation and its effect on AP; Section 9.2 ordering key; Platt sign mapping against the installed calibrator; numerical-constancy guard below, exactly at and above 1e-8, plus a ddof-sensitive case; reliability-bin assignment (`TestReliabilityBins`: edges start their bins, values just below an edge stay lower, lower-tail bin, closed last bin with p = 1.0, partition of [0, 1], rejection of out-of-range values); **`TestSyntheticFittedIntegration` (5 tests; mentor-requested):** small LR, HGB and sigmoid-calibrator fits on *generated* data only, confirming `classes_[1]` orientation, `predict_proba = expit(decision_function)`, negation for a first-sorted positive label, sklearn `a_ < 0` ⇔ protocol A > 0, calibrator input = `decision_function`, and A ≤ 0 under a reversed association. It never reads the dataset |
+| `tests/test_phase5b1.py` | 34 | Phase 5B-1: frozen `T_fit`/`T_cal` boundaries and refusals; order/index/equal-timestamp preservation; integrity and estimability checks; usability boundaries (9/10 frauds, 999/1,000 splits); hand-computed buffer case; conservation; frozen draws; score-track validator; read-only historical quote; `T_fit`-only fit and AP recomputation; test-label/feature invariance of the runner with a validation-label control; real-data `T_fit`/`T_cal` counts and E2 regression against `reports/phase5b1_results.json` |
 | `tests/test_reproducibility.py` | 24 | Dataset check (missing, mismatch, ok, exit codes) on temporary files; strict JSON; absolute-path detection; no personal paths in code and onboarding docs; size policy; exact pins; environment manifest; freeze-manifest template, drift guard and frozen-status rules |
 
-Real-data tests are skipped when `data/raw/creditcard.csv` is absent. `TestSyntheticFittedIntegration` is the only Phase 5B-0 test that fits models, and only on synthetic arrays.
+Real-data tests are skipped when `data/raw/creditcard.csv` is absent. `TestSyntheticFittedIntegration` is the only Phase 5B-0 test that fits models, and only on synthetic arrays. Phase 5B-1 tests fit the continuity LR on synthetic data; none reads a test-partition label. The full suite has 275 tests.
