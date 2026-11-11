@@ -3,7 +3,13 @@
 ## Verified repository facts
 
 - FraudGuard is an educational credit-card fraud detection project.
-- Current project phase: **Phase 5B-1 — E2 usability, `T_fit`/`T_cal` partition helper and three-track Phase 4 continuity, implemented and awaiting mentor review (2026-11-11); not committed.** Report: `docs/reports/PHASE_5B_1_REPORT.md`; results: `reports/phase5b1_results.json`. No hyperparameter grid, challenger, calibrator, E1/E2 statistic or test evaluation has been run.
+- Current project phase: **Phase 5B-2 part II: protocol Section 4.2 step 2, implemented and awaiting mentor review (2026-11-11); not committed.**
+  - All 28 frozen configurations were fitted once on `T_fit`, and `T_cal` and validation were scored once each.
+  - Step-3 candidates under the Section 5.4 rule: **LR-10** (C = 1, balanced; validation AP 0.8536) and **HGB-14** (0.1 / 31 / 20 / balanced; 0.8686).
+  - Results: `reports/phase5b2_grid_results.json`; report: `docs/reports/PHASE_5B_2_REPORT.md`, Part II.
+  - No calibration, criterion E1/E2 statistic, champion decision or test evaluation has been run.
+- *Part I of Phase 5B-2, mentor-approved with a scope clarification (E0 and experiment E2 protocol-aligned; E1 and E3 exploratory deviations only, never influencing champion selection):* controlled experiments E0–E3 (LR / HGB × baseline features / + `log1p(Amount)`). Implemented and awaiting mentor review (2026-11-11); not committed.** Report: `docs/reports/PHASE_5B_2_REPORT.md`; results: `reports/phase5b2_results.json`. One a-priori HGB grid point was fitted. No hyperparameter grid, selection, calibrator, criterion E1/E2 statistic or test evaluation has been run. `log1p(Amount)` (E1, E3) is a logged, owner-instructed exploratory deviation from protocol Section 5.5, outside the champion pathway.
+  - *Previous phase:* Phase 5B-1 (E2 usability, `T_fit`/`T_cal` partition helper, three-track Phase 4 continuity), committed in `aa4e63a`. Report: `docs/reports/PHASE_5B_1_REPORT.md`; results: `reports/phase5b1_results.json`.
   - *Previous phase:* **Phase 5B-0 — protocol and documentation remediation and reproducibility infrastructure, complete and mentor-approved (2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state.
   - **Phase 5A** (experimental protocol) is approved by the project owner and closed (2026-11-09). The approved protocol is `docs/phase_5a_experimental_protocol.md`, Revision 4 plus closure, committed in `9b6d8e8` (originally `760ccc3`; renamed by the 2026-11-11 attribution rewrite, files identical; see WORK_LOG).
   - Phase 5B-0 adds the implementation clarification addendum (protocol Appendix C), frozen settings, the ranking-score interface, the E2 block and buffer convention, reproducibility tooling and the onboarding documentation. See `docs/reports/PHASE_5B_0_COMPLETION_REPORT.md`.
@@ -16,7 +22,7 @@
 - Tests run from the repository root with `python -m unittest discover -s tests -v`, using the activated project environment. They use the standard-library `unittest`; pytest is not installed or required. Setup for new users: `README.md`, "Getting started".
 - Verified environment: Python 3.13.6 with the pinned versions above, recorded in `reports/environment_manifest.json`. It is the original developer's local environment, which must not be modified. Other environments are not verified.
 
-## Architecture (as of Phase 5B-1)
+## Architecture (as of Phase 5B-2)
 
 | Concern | Module |
 |---|---|
@@ -34,6 +40,10 @@
 | `T_fit`/`T_cal` sub-partitions (Phase 5B-1) | `src/data/train_subpartitions.py`: frozen boundary 112,553 \| 112,555; train rows only; integrity and estimability checks |
 | E2 usable-split count (Phase 5B-1) | `src/evaluation/e2_usability.py`: validation timestamps and labels only; frozen rules (≥ 10 held-out frauds; ≥ 1,000 usable splits) |
 | Phase 4 continuity (Phase 5B-1) | `src/models/phase4_continuity.py`: three score tracks with a required `score_representation`; CLI `python -m src.models.run_phase5b1` |
+| `log1p(Amount)` feature (Phase 5B-2) | `src/features/amount_transform.py`: stateless, row-wise; appends `log1p_Amount`, keeps `Amount`; refuses negative or non-finite amounts |
+| Fixed-K capacity metrics (Phase 5B-2) | `src/evaluation/capacity.py`: Precision@K, Recall@K, TP/FP, oracle ceiling, Section 9.2 tie-break and boundary-tie report |
+| Experiments E0–E3 (Phase 5B-2) | `src/models/phase5b2_experiments.py`: definitions, the a-priori HGB grid point, fitting on `T_fit`, tracks A/B/C with a required `score_representation`, held-out-half stability (descriptive, not criterion E2); CLI `python -m src.models.run_phase5b2` |
+| 28-configuration grid (Phase 5B-2, protocol 4.2 step 2) | `src/models/phase5_grid.py`: frozen grid enumeration, builders, single `T_fit` fit with `T_cal` and validation scoring, Section 5.4 selection rule; CLI `python -m src.models.run_phase5b2_grid` (`compute_grid` returns the in-memory score cache) |
 | Reproducibility (Phase 5B-0) | `src/reproducibility/dataset.py` (fingerprint check); `src/reproducibility/manifest.py` (environment manifest, freeze-manifest template, result-size policy) |
 
 Both splits return the same ordered categorical `train`/`validation`/`test` labels, so they plug into the same runner. Preprocessing lives inside each scikit-learn `Pipeline`, so `fit` on the training rows is the only place any statistic is learned. The runner refuses to evaluate on the test partition. Phase 4c fits once, scores validation once, and reuses those scores for every threshold and window analysis. Details: `docs/TECHNICAL_DOCUMENTATION.md`.
@@ -126,7 +136,7 @@ The existing rules still apply: the test partition stays untouched until final e
 
 ## Scope and limits
 
-No feature engineering or hyperparameter tuning has been performed. The data covers about 48 hours and has few fraud cases in validation (56 chronological, 74 random) and test. Independent bootstrap confidence intervals (audit computations, seed 0, 2,000 stratified resamples) for the Phase 4b average precision and the Phase 4c threshold transfer are documented in `docs/reports/phase4_model_development.md` (Sections 3.2 and 5.1). `V1`–`V28` are anonymized PCA components. Label availability timing and the intended operational prediction point remain unspecified. The chronological boundaries in `src/data/split.py` are specific to this dataset. **Test-partition scope (to be acknowledged before final test evaluation):** the test set covers only hour values 18–23 (elapsed hour modulo 24, not clock time) of the second day of one approximately 48-hour dataset, with 42,721 transactions, 52 frauds and prevalence 0.1217%. Validation and test contain no hour values 00–11 (Phase 3 report, Sections 4 and 7). Refer to `docs/validation_strategy.md` for detailed design and leakage controls, and `docs/business_understanding.md` for business framing.
+No hyperparameter tuning has been performed. *Qualified in Phase 5B-2:* the only feature engineering is the exploratory `log1p(Amount)` column of experiments E1/E3 (a logged, owner-instructed deviation from protocol Section 5.5). It is not adopted into any model or into the champion pathway. The data covers about 48 hours and has few fraud cases in validation (56 chronological, 74 random) and test. Independent bootstrap confidence intervals (audit computations, seed 0, 2,000 stratified resamples) for the Phase 4b average precision and the Phase 4c threshold transfer are documented in `docs/reports/phase4_model_development.md` (Sections 3.2 and 5.1). `V1`–`V28` are anonymized PCA components. Label availability timing and the intended operational prediction point remain unspecified. The chronological boundaries in `src/data/split.py` are specific to this dataset. **Test-partition scope (to be acknowledged before final test evaluation):** the test set covers only hour values 18–23 (elapsed hour modulo 24, not clock time) of the second day of one approximately 48-hour dataset, with 42,721 transactions, 52 frauds and prevalence 0.1217%. Validation and test contain no hour values 00–11 (Phase 3 report, Sections 4 and 7). Refer to `docs/validation_strategy.md` for detailed design and leakage controls, and `docs/business_understanding.md` for business framing.
 
 ## Handoff state and next task
 
@@ -136,12 +146,20 @@ The Phase 5 methodology and design briefing is complete, and its decisions are r
 
 *Historical (end of Phase 5B-0):* Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) is complete and mentor-approved (2026-11-11), committed in `7c4edcd`, with the environment manifest in `aa67802`. **Next task:** Phase 5B-1, the first implementation and experiment stage of the protocol. It starts only on explicit approval and proceeds with review between stages. Seeds, the ranking score (`decision_function`), the E2 buffer convention and the result-storage policy are frozen before it (protocol Appendix C). Do not write the final report until the project is complete. Keep the test partition untouched until final evaluation. The Phase 4c thresholds are analytical; no operational threshold has been chosen. See `docs/WORK_LOG.md` for details.
 
-**Current state (2026-11-11):** Phase 5B-1 is implemented and awaiting mentor review; it is not committed. Results (development, validation only):
+**Current state (2026-11-11):** Phase 5B-2 is implemented and awaiting mentor review; it is not committed. Development results (validation only; 56 frauds; track B = `decision_function` on `T_fit`):
+- AP: E0 0.8536, E1 0.8539, E2 = E3 0.8686.
+- HGB − LR ΔAP: +0.003 in W1 and +0.024 in W2. On the held-out halves of the frozen E2 splits, the median is +0.016 and the difference is positive in 80% of splits (descriptive).
+- At the illustrative K grid, all models catch the same frauds within one.
+- `log1p(Amount)` has a negligible effect on LR and exactly none on HGB: as a monotone duplicate, it is never used in a split.
+- Track C (`predict_proba`) equals track B for all four experiments.
+- No model is selected; the champion rule (criteria E1 + E2 after the 28-configuration grid) is unchanged. See `docs/reports/PHASE_5B_2_REPORT.md`.
+
+*Historical (end of Phase 5B-1):* Phase 5B-1 was implemented and awaiting mentor review; it is now committed (`aa4e63a`). Results (development, validation only):
 - `T_fit` 159,491 rows / 356 frauds and `T_cal` 39,873 / 28, exactly as in protocol Section 3.1; no timestamp spans both.
 - E2: 1,984 of 2,000 splits usable, so E2 is estimable under the pre-registered rule. No E2 statistic has been computed.
 - Continuity, validation AP: 0.8397 historical (`predict_proba`, full train, quoted); 0.8536 Phase 5 primary (`decision_function`, `T_fit`); 0.8536 diagnostic (`predict_proba`, same fit).
 
-**Next task:** mentor review of Phase 5B-1. Then, only on approval, protocol Section 4.2 step 2 (fit the 28 configurations on `T_fit`, score `T_cal` and validation once each). The test partition stays untouched until final evaluation. Do not write the final report until the project is complete.
+**Next task:** mentor review of Phase 5B-2 part II (the grid and the recorded step-3 candidates LR-10 and HGB-14). Then, only on approval, step 4 (sigmoid calibration on `T_cal`). *Superseded:* "mentor review of Phase 5B-2, including the logged `log1p(Amount)` deviation" (approved; step 2 done). *(Earlier text: mentor review of Phase 5B-1.)* Then, only on approval, protocol Section 4.2 step 2 (fit the 28 configurations on `T_fit`, score `T_cal` and validation once each). The test partition stays untouched until final evaluation. Do not write the final report until the project is complete.
 
 ## Assumptions
 

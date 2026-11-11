@@ -2,7 +2,7 @@
 
 Reference for implemented and tested components. Methodology and status live in `docs/PROJECT_CONTEXT.md`, and experiment history and results in `docs/WORK_LOG.md`. This file describes only code that exists and is covered by tests.
 
-Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`), plus the Phase 5B-0 infrastructure modules (settings, ranking score, E2 blocks, reproducibility) and the Phase 5B-1 modules (`T_fit`/`T_cal` sub-partitions, E2 usability, three-track Phase 4 continuity; implemented 2026-11-11, awaiting mentor review).
+Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`), plus the Phase 5B-0 infrastructure modules (settings, ranking score, E2 blocks, reproducibility) and the Phase 5B-1 modules (`T_fit`/`T_cal` sub-partitions, E2 usability, three-track Phase 4 continuity; committed in `aa4e63a`) and the Phase 5B-2 modules (`log1p(Amount)` feature, fixed-K capacity metrics, experiments E0–E3; implemented 2026-11-11, awaiting mentor review).
 
 ## Running
 
@@ -14,6 +14,8 @@ python -m src.models.run_baselines               # Phase 4b experiments
 python -m src.models.run_baselines --data PATH --output PATH --random-state 42
 python -m src.models.run_threshold_analysis     # Phase 4c threshold analysis (same options)
 python -m src.models.run_phase5b1                # Phase 5B-1 (--output PATH)
+python -m src.models.run_phase5b2                # Phase 5B-2 experiments E0-E3 (--output PATH; about 65 s)
+python -m src.models.run_phase5b2_grid           # Protocol 4.2 step 2: 28-configuration grid (--output PATH; about 4 min)
 ```
 
 Both runners read `data/raw/creditcard.csv` by default. They write `reports/phase4b_baseline_results.json` (about 5 seconds) and `reports/phase4c_threshold_results.json` (about 9.5 MB, about 3 seconds).
@@ -217,6 +219,49 @@ E2 block convention (protocol Appendix C, item C4):
 
 `compute(df, config, phase4b_path)` is the pure core used by the tests.
 
+## Phase 5B-2 modules
+
+### `src/features/amount_transform.py`
+- `log1p_amount(values)` returns `log1p` as float64. It refuses negative, missing or infinite amounts; `log1p(0) = 0`.
+- `add_log1p_amount(df)` returns a copy with `log1p_Amount` appended. `Amount`, the index and the row order are kept, and the input is not modified. It is stateless (no fitted parameter), so applying it per partition cannot leak.
+
+### `src/evaluation/capacity.py`
+- `fixed_k_metrics(y, scores, times, positions, k)` reviews exactly K rows in the protocol Section 9.2 order (`ranking_order`: score ↓, `Time` ↑, file position ↑; label-free).
+- It returns TP, FP (legitimate alerts), Precision@K, Recall@K (NaN when there is no fraud), the alert share, the oracle recall ceiling and the boundary-tie report: `n_tied_at_boundary`, inside/outside counts, frauds in the tied group, `[tp_min, tp_max]`, expected TP under a random tie order, and `tie_sensitive`.
+- It refuses K < 1, a non-integer or boolean K, and K > n. `fixed_k_table` applies it over a K grid.
+
+### `src/models/phase5b2_experiments.py`
+- `EXPERIMENTS` (E0–E3), `FEATURE_SETS` (`baseline` = the frozen 29 model features; `baseline_plus_log1p_amount` = 30) and `CONTRASTS` (each isolates one factor).
+- `HGB_PARAMS` is one frozen grid point: 0.1 / 31 / 20 / balanced, `max_iter` 300, `early_stopping=False`, `l2_regularization` 1.0, `max_bins` 255. `build_hgb` is a column selector followed by `HistGradientBoostingClassifier` (no scaler).
+- `prepare_frames` refuses fit rows after 112,553 (`T_cal`, validation, test) and scoring rows outside the validation period. It adds `log1p_Amount` only for E1 and E3.
+- `fit_experiment` fits once through `experiment.fit_and_score`; LR reuses `build_continuity_lr` and the refit rule. It returns the `decision_function` (track B) and `predict_proba` (track C) scores of the same fit, the default `predict()`, fit information and wall-clock runtime.
+- `evaluate_track` gives full-validation and per-window AP, ROC-AUC, fixed-K tables and score diagnostics. `default_rule_diagnostic` reports the alerts of the default `predict()` rule.
+- `validate_experiment_tracks` requires tracks A/B/C for every experiment, each with the frozen `score_representation`. Only track A of E1–E3 may be `not_applicable`.
+- `heldout_half_stability` gives the AP of each fixed experiment on the buffered held-out half of each usable frozen E2 split, with contrast distributions. It is descriptive and is not criterion E2.
+
+### `src/models/run_phase5b2.py`
+`python -m src.models.run_phase5b2 [--output PATH]`:
+1. Checks the dataset SHA-256.
+2. Removes test rows (`run_phase5b1.drop_test_rows`).
+3. Fits E0–E3 on `T_fit` and asserts identical validation rows.
+4. Refits each HGB once and compares scores (determinism).
+5. Evaluates tracks A/B/C, the contrasts, AP rankings and held-out halves.
+6. Writes strict JSON with provenance.
+
+`runtime_seconds` is the only non-reproducible key. `compute(df, config, phase4b_path, phase5b1_path, check_hgb_determinism)` is the pure core used by the tests.
+
+### `src/models/phase5_grid.py` (protocol Section 4.2 step 2)
+- `grid_configurations()` returns the 28 frozen configurations (`LR-01`…`LR-12`, `HGB-01`…`HGB-16`) as the Cartesian product of `pre_registered_configuration()["models"][family]["grid"]`, in key order.
+- `build_pipeline(family, params, features, seed, max_iter)` takes every fixed value from the frozen settings. For LR, `penalty` is not passed (L2 is the default).
+- `check_row_roles` refuses rows outside `T_fit`, `T_cal` and validation.
+- `fit_configuration` fits once on `T_fit` through `fit_and_score`, with the LR refit at 5,000 on a convergence warning. It scores validation and `T_cal` with `decision_function` and `predict_proba`, and returns the scores, fit information and runtime.
+- `select_within_family` applies Section 5.4: max validation AP; ties within 1e-12 → simpler (`simplicity_key`). It also reports the spread.
+
+### `src/models/run_phase5b2_grid.py`
+- `compute_grid(df, config, check_hgb_determinism)` removes test rows, fits all 28 configurations (each HGB twice; it aborts on non-determinism) and returns the **in-memory score cache** for later stages.
+- `summarize(run, config, ...)` gives track B/C metrics (fixed-K, windows) per configuration, track A on LR-10, the 28-row table (AP, ROC-AUC, Recall@100), the step-3 record and continuity with the Part I experiments.
+- Wall-clock fields (`runtime_seconds`, `hgb_determinism.*.second_fit_seconds`) are the only non-reproducible values.
+
 ## Adding a dataset
 
 1. Add a `DatasetConfig` with the target, the features or exclusions, and optionally a time column and duplicate-group columns.
@@ -238,6 +283,8 @@ Feature columns must be numeric and finite. Categorical encoding and imputation 
 | `tests/test_validation_blocks.py` | 18 | Half-open block edges; out-of-period and fractional timestamps rejected; buffer boundary seconds (a-301 kept, a-300 dropped, b dropped, b+300 kept); >= 301-s separation; no overlap; partial final block as held-out and as selection; no buffer beyond period edges; equal timestamps |
 | `tests/test_ranking_score.py` | 36 | `decision_function`-only interface on stub estimators; no `predict_proba` fallback; label orientation; unfitted scikit-learn API checks; `expit` saturation and its effect on AP; Section 9.2 ordering key; Platt sign mapping against the installed calibrator; numerical-constancy guard below, exactly at and above 1e-8, plus a ddof-sensitive case; reliability-bin assignment (`TestReliabilityBins`: edges start their bins, values just below an edge stay lower, lower-tail bin, closed last bin with p = 1.0, partition of [0, 1], rejection of out-of-range values); **`TestSyntheticFittedIntegration` (5 tests; mentor-requested):** small LR, HGB and sigmoid-calibrator fits on *generated* data only, confirming `classes_[1]` orientation, `predict_proba = expit(decision_function)`, negation for a first-sorted positive label, sklearn `a_ < 0` ⇔ protocol A > 0, calibrator input = `decision_function`, and A ≤ 0 under a reversed association. It never reads the dataset |
 | `tests/test_phase5b1.py` | 34 | Phase 5B-1: frozen `T_fit`/`T_cal` boundaries and refusals; order/index/equal-timestamp preservation; integrity and estimability checks; usability boundaries (9/10 frauds, 999/1,000 splits); hand-computed buffer case; conservation; frozen draws; score-track validator; read-only historical quote; `T_fit`-only fit and AP recomputation; test-label/feature invariance of the runner with a validation-label control; real-data `T_fit`/`T_cal` counts and E2 regression against `reports/phase5b1_results.json` |
+| `tests/test_phase5b2.py` | 41 | Phase 5B-2: `log1p` values, zero handling, immutability, statelessness and refusals; experiment and feature-set definitions (no `Time`; pairs differ only by `log1p_Amount`; LR = Phase 4; HGB = frozen grid point); refusal of non-`T_fit`/non-validation rows; scaler fitted on `T_fit` only; identical validation rows; track B/C scores equal the pipeline outputs; E0 = Phase 5B-1 primary; HGB determinism; E3 ≡ E2 mechanism; hand-computed P@K/R@K, tie-break and tie range, label-free order, K edge cases; track validator; windows; held-out halves equal the `e2_usability` count; synthetic test-isolation invariance with a validation-label control; real-data quoted track A, E0 continuity and full recomputation against `reports/phase5b2_results.json` |
+| `tests/test_phase5b2_grid.py` | 18 | Grid = frozen product (12 + 16) with every fixed value applied and no deprecated `penalty=`; frozen features; row-role refusals; `T_fit`-only fit; `T_cal`/validation scores equal pipeline outputs; LR-10/HGB-14 reproduce the Part I builders; convergence-refit rule; Section 5.4 tie-break (LR, HGB) and refusals; synthetic end-to-end with test-isolation invariance; real-data counts, continuity, 16/16 HGB determinism and reproducible selection |
 | `tests/test_reproducibility.py` | 24 | Dataset check (missing, mismatch, ok, exit codes) on temporary files; strict JSON; absolute-path detection; no personal paths in code and onboarding docs; size policy; exact pins; environment manifest; freeze-manifest template, drift guard and frozen-status rules |
 
-Real-data tests are skipped when `data/raw/creditcard.csv` is absent. `TestSyntheticFittedIntegration` is the only Phase 5B-0 test that fits models, and only on synthetic arrays. Phase 5B-1 tests fit the continuity LR on synthetic data; none reads a test-partition label. The full suite has 275 tests.
+Real-data tests are skipped when `data/raw/creditcard.csv` is absent. `TestSyntheticFittedIntegration` is the only Phase 5B-0 test that fits models, and only on synthetic arrays. Phase 5B-1 tests fit the continuity LR on synthetic data; none reads a test-partition label. Phase 5B-2 tests fit E0–E3 on synthetic data, plus one real-data recomputation that removes test rows first. The grid tests fit all 28 configurations on synthetic data only. The full suite has 334 tests (275 before Phase 5B-2; 316 after part I).

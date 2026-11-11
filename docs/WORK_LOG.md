@@ -2,7 +2,9 @@
 
 ## Current status
 
-- **Current phase:** Phase 5 — **Phase 5B-1 (E2 usability, `T_fit`/`T_cal` partition helper, three-track Phase 4 continuity) implemented and verified, awaiting mentor review (2026-11-11); not committed.** See the Phase 5B-1 session below and `docs/reports/PHASE_5B_1_REPORT.md`.
+- **Current phase:** Phase 5 — **Phase 5B-2 part II (protocol Section 4.2 step 2: the 28-configuration grid; step-3 candidates LR-10 and HGB-14 recorded) implemented and verified, awaiting mentor review (2026-11-11); not committed.** Part I (experiments E0–E3) was mentor-approved with a scope clarification (E1/E3 exploratory only).
+- *Previous status line (end of part I):* Phase 5 — **Phase 5B-2 (controlled experiments E0–E3: LR / HGB × baseline / + `log1p(Amount)`) implemented and verified, awaiting mentor review (2026-11-11); not committed.** See the Phase 5B-2 session below and `docs/reports/PHASE_5B_2_REPORT.md`. Phase 5 is not complete.
+- *Previous status line (end of Phase 5B-1):* Phase 5 — **Phase 5B-1 (E2 usability, `T_fit`/`T_cal` partition helper, three-track Phase 4 continuity) implemented and verified, awaiting mentor review (2026-11-11); not committed.** *(Resolved: Phase 5B-1 is committed in `aa4e63a`; see `git log`.)* See the Phase 5B-1 session below and `docs/reports/PHASE_5B_1_REPORT.md`.
 - *Previous status line (end of Phase 5B-0):* Phase 5 — **Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) complete and mentor-approved (final approval reported by the owner, 2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state. The manifest is a snapshot of the clean tree at `7c4edcd` (`dirty: false`). Phase 5B-1 has not started (session at the top).
   - Phase 5A (experimental protocol) was approved by the project owner and closed on 2026-11-09, committed in `9b6d8e8` (originally `760ccc3`; see the commit-ID mapping below).
   - The frozen protocol is `docs/phase_5a_experimental_protocol.md` (Revision 4 plus closure), with implementation clarifications in its Appendix C (Phase 5B-0).
@@ -12,6 +14,47 @@
 - **Phase 4:** Model Development & Evaluation, **complete and mentor-approved (2026-11-08)**. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. The retrospective documentation remediation of Phases 1–4 is complete (see the sessions below). The Phase 1, Phase 2 and Phase 3 reports are committed. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7`.
 - **Key commits on branch `main`** (verified 2026-11-08): the Phase 1 remediation (`0459921`), the Phase 2 report (`9b52a8a`), the Phase 3 report (`ac178c3`), the Phase 4 completion (`1f510f7`, `Complete Phase 4 model development and evaluation`) and the Phase 5 design documentation (`a84f94a`, originally `4c463f4`, `docs: finalize approved Phase 5 design documentation`). Use `git log` for the current `HEAD`.
 - **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`; Phase 4: `phase4_model_development.md`, committed in `1f510f7`; Phase 5B-0: `PHASE_5B_0_COMPLETION_REPORT.md`; created in the sessions below). Phase 5 protocol: `docs/phase_5a_experimental_protocol.md`. Policy: `docs/result_storage_policy.md`. Dataset: `data/README.md`.
+
+## Phase 5B-2 session, part II — protocol Section 4.2 step 2: 28-configuration grid (2026-11-11)
+
+The mentor approved part I (below) with a scope clarification: E0 and experiment E2 are protocol-aligned; E1 and E3 (`log1p(Amount)`) remain documented exploratory deviations that must not influence champion selection or modify the protocol. The owner then instructed step 2. Nothing frozen was changed (configuration SHA-256 `86ab5adb…`).
+
+- **New files:** `src/models/phase5_grid.py`, `src/models/run_phase5b2_grid.py`, `tests/test_phase5b2_grid.py` (18 tests), `reports/phase5b2_grid_results.json` (810,757 B). Report: `docs/reports/PHASE_5B_2_REPORT.md`, Part II.
+- **Run [V]:** all 28 frozen configurations (12 LR, 16 HGB; 29 features, no `Time`). Each is fitted once on `T_fit` and scores `T_cal` and validation once each (track B `decision_function`, track C `predict_proba`; track A on LR-10 only). Scores are cached in memory (Section 12.2); none is written to disk. `T_cal` labels are not read. Total runtime 3 min 42 s.
+- **Fits [V]:** every LR converged within 1,000 iterations (no refit was needed). All 16 HGB configurations are deterministic: two fits gave bit-identical scores. Track C AP equals track B AP for all 28. No saturation; no tie-sensitive K boundary.
+- **Results [V]** (validation AP, track B):
+  - LR: 0.7201–0.8536 (median 0.8043).
+  - HGB: 0.7562–0.8686 (median 0.8299).
+  - LR-10 = E0 and HGB-14 = experiment E2, exactly.
+- **Step-3 record (Section 5.4 rule; development, optimistic by selection):** LR → **LR-10** (C = 1, balanced; AP 0.853574; spread 0.0493); HGB → **HGB-14** (0.1 / 31 / 20 / balanced; AP 0.868638; spread 0.0387). No tie within 1e-12. Selected-pair ΔAP is +0.0151 (W1 +0.003, W2 +0.024). Not a champion decision.
+- **Disclosure:** HGB-14 is the point whose validation AP was seen in part I before the grid ran. The selection rule is mechanical and pre-registered, so no discretion entered.
+- **Reproducibility [V]:** a second full run is identical except the wall-clock fields (`runtime_seconds`, `hgb_determinism.*.second_fit_seconds`).
+- **Tests [V]:** focused 18/18 (with `-W error::FutureWarning`); full suite 334/334.
+- **Not done:** calibration (step 4), operational analysis, criteria E1/E2, the champion decision, the replay and any test evaluation. No commit.
+
+## Phase 5B-2 session — controlled experiments E0–E3 (2026-11-11)
+
+Started on the project owner's explicit instruction, which set the scope: E0 = LR baseline features; E1 = LR + `log1p(Amount)`; E2 = HGB baseline features; E3 = HGB + `log1p(Amount)`. It also set three evaluation tracks (A historical / B primary / C diagnostic), AP as the primary metric, P@K/R@K, temporal stability, capacity interpretation and the safeguards. The experiment IDs E0–E3 are unrelated to the protocol's champion criteria E1/E2. No locked Phase 5B-0 value was changed; the configuration SHA-256 is still `86ab5adb…`.
+
+- **Protocol deviation (logged per protocol Section 12.2):** protocol Section 5.5 excludes feature engineering, naming `log(Amount)`. E1 and E3 run on the owner's instruction as **exploratory development results outside the champion pathway**. No feature set is adopted from them; any later adoption would be a validation-informed change needing mentor approval. *Not a deviation:* the HGB configuration is one point of the frozen grid (Section 5.3), chosen a priori. The three tuned parameters take scikit-learn's defaults (0.1 / 31 / 20), `class_weight="balanced"`, and the protocol's fixed values. No other configuration was fitted.
+- **New files:** `src/features/amount_transform.py`, `src/evaluation/capacity.py`, `src/models/phase5b2_experiments.py`, `src/models/run_phase5b2.py`, `tests/test_phase5b2.py` (41 tests), `reports/phase5b2_results.json` (125,670 B), `docs/reports/PHASE_5B_2_REPORT.md`. No earlier module changed.
+- **Design [V]:** each experiment is fitted once on `T_fit` (159,491 / 356) through the Phase 4 runner and scores the same 42,722 validation rows (56 frauds) once. `T_cal` is unused; test rows are removed before any label access. Track A (E0 only) is quoted from Phase 4b; tracks B and C are the same fit scored with `decision_function` and `predict_proba`.
+- **Results [V]** (validation; track B AP / ROC-AUC):
+  - E0 0.853574 / 0.981031 (equal to the Phase 5B-1 primary);
+  - E1 0.853869 / 0.980860;
+  - E2 0.868638 / 0.979531;
+  - E3 identical to E2, bit for bit.
+  - Track C equals track B for all four (no saturation; max logit 31.55 LR, 15.35 HGB). Track A for E0 is 0.839660 / 0.981517.
+- **Temporal stability [V]:**
+  - HGB − LR ΔAP is +0.003 in W1 (23 frauds) and +0.024 in W2 (33 frauds); HGB's W1 ROC-AUC is lower (−0.004).
+  - On the 1,984 usable held-out halves of the frozen E2 splits (fixed configurations; descriptive, not criterion E2), HGB − LR has median ΔAP +0.016, 5th–95th percentile −0.011 to +0.057, and is positive in 80% of splits.
+  - `log1p` in LR: median −0.00004, and negative in both windows although +0.0003 on pooled validation (noise).
+- **Capacity [V]:** at the frozen illustrative K grid {25, 50, 100, 250, 500}, all models catch 25 / 44 / 48–49 / 51 / 52 of 56 frauds with 0 / 6 / 51–52 / 199 / 448 legitimate alerts. HGB catches one fraud fewer at K = 100. No boundary is tie-sensitive. The AP gain does not appear at these capacities.
+- **Finding:** `log1p(Amount)` cannot change an HGB. It is monotone, so it gets the same bins (189) as `Amount`; every split ties in gain and goes to the earlier column. It was never used in a tree, and E3 = E2 exactly. For LR its effect is negligible.
+- **Cost [V] (wall clock):** LR fit about 0.5 s, HGB about 10 s (300 trees); scoring 0.005 s vs 0.15 s. HGB determinism holds: two fits give bit-identical scores.
+- **Reproducibility [V]:** a CLI rerun is identical except `runtime_seconds`.
+- **Tests [V]:** focused 41/41 (with `-W error::FutureWarning`); full suite 316/316.
+- **Not done:** the 28-configuration grid, selection, calibration, criteria E1/E2, bootstrap intervals, queue/cost analysis, the W1 → W2 replay and any test evaluation. No commit.
 
 ## Phase 5B-1 session — E2 usability, T_fit/T_cal partition, Phase 4 continuity (2026-11-11)
 
@@ -525,4 +568,6 @@ No files were deleted. No raw data or notebook was changed during handoff prepar
 
 *Historical (after Phase 5B-0):* mentor review of Phase 5B-0, then Phase 5B-1. Done: Phase 5B-0 committed (`7c4edcd`, `aa67802`, `726a354`); Phase 5B-1 implemented 2026-11-11 (session at the top).
 
-**Current:** mentor review of Phase 5B-1. Then, only on approval, protocol Section 4.2 step 2: fit the 28 configurations on `T_fit` and score `T_cal` and validation once each. *Earlier text of this entry:* mentor review of Phase 5B-0, then Phase 5B-1 (the first implementation and experiment stage). Phase 5B-1 starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
+*Historical (after Phase 5B-1):* mentor review of Phase 5B-1, then protocol Section 4.2 step 2. Phase 5B-1 is committed (`aa4e63a`). On the owner's instruction, Phase 5B-2 then ran the controlled experiments E0–E3 (session at the top) before the grid stage.
+
+**Current:** mentor review of Phase 5B-2 part II (the grid, step 2, and the recorded step-3 candidates). Then, only on approval, step 4: sigmoid calibration of LR-10 and HGB-14 on their `T_cal` scores. *Superseded:* "mentor review of Phase 5B-2, including the logged `log1p(Amount)` deviation; then step 2". Done: part I approved with a scope clarification, and step 2 implemented (session at the top). *Earlier text of this entry:* mentor review of Phase 5B-0, then Phase 5B-1 (the first implementation and experiment stage). Phase 5B-1 starts only on explicit approval and proceeds with review between stages. Before any final test evaluation, acknowledge the test-partition scope recorded in the Phase 3 report (Section 7). Do not write the final report until the project is complete. The test partition stays untouched until final evaluation. The Phase 4c thresholds are analytical; an operational threshold still requires agreed costs and review capacity.
