@@ -2,7 +2,9 @@
 
 ## Current status
 
-- **Current phase:** Phase 5 — **Phase 5B-2 part II (protocol Section 4.2 step 2: the 28-configuration grid; step-3 candidates LR-10 and HGB-14 recorded) implemented and verified, awaiting mentor review (2026-11-11); not committed.** Part I (experiments E0–E3) was mentor-approved with a scope clarification (E1/E3 exploratory only).
+- **Current phase:** Phase 5 — **Phase 5B-3 (calibration, criteria E1 and E2, champion decision; protocol Section 4.2 steps 4, 6, 7 and the fixed-K part of step 5) implemented and verified, awaiting mentor review (2026-11-14); not committed.** Champion: **LR-10** (E1 and E2 both fail; no sufficient evidence for replacement). See the Phase 5B-3 session below and `docs/reports/PHASE_5B_3_REPORT.md`.
+- *Previous status line (end of Phase 5B-2):* Phase 5B-2 parts I and II are **committed in `e4f60ee`** ("Complete Phase 5B-2"; verified as HEAD on 2026-11-14). *(Corrected 2026-11-14: the lines below that say Phase 5B-2 is "awaiting mentor review; not committed" describe the state before that commit.)*
+- *Earlier status line (end of Phase 5B-2 part II):* Phase 5 — **Phase 5B-2 part II (protocol Section 4.2 step 2: the 28-configuration grid; step-3 candidates LR-10 and HGB-14 recorded) implemented and verified, awaiting mentor review (2026-11-11); not committed.** Part I (experiments E0–E3) was mentor-approved with a scope clarification (E1/E3 exploratory only).
 - *Previous status line (end of part I):* Phase 5 — **Phase 5B-2 (controlled experiments E0–E3: LR / HGB × baseline / + `log1p(Amount)`) implemented and verified, awaiting mentor review (2026-11-11); not committed.** See the Phase 5B-2 session below and `docs/reports/PHASE_5B_2_REPORT.md`. Phase 5 is not complete.
 - *Previous status line (end of Phase 5B-1):* Phase 5 — **Phase 5B-1 (E2 usability, `T_fit`/`T_cal` partition helper, three-track Phase 4 continuity) implemented and verified, awaiting mentor review (2026-11-11); not committed.** *(Resolved: Phase 5B-1 is committed in `aa4e63a`; see `git log`.)* See the Phase 5B-1 session below and `docs/reports/PHASE_5B_1_REPORT.md`.
 - *Previous status line (end of Phase 5B-0):* Phase 5 — **Phase 5B-0 (protocol and documentation remediation, reproducibility infrastructure) complete and mentor-approved (final approval reported by the owner, 2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state. The manifest is a snapshot of the clean tree at `7c4edcd` (`dirty: false`). Phase 5B-1 has not started (session at the top).
@@ -14,6 +16,39 @@
 - **Phase 4:** Model Development & Evaluation, **complete and mentor-approved (2026-11-08)**. Phase 4a (chronological partitioning) is committed in `37d4521`. Phase 4b (baseline modeling) is committed in `4b5b94b`. **Phase 4c (threshold analysis and temporal stability) is approved and complete**, committed in `cffc32c`. The retrospective documentation remediation of Phases 1–4 is complete (see the sessions below). The Phase 1, Phase 2 and Phase 3 reports are committed. The Phase 4c completion work (common-reference comparison) and the Phase 4 retrospective report are committed in `1f510f7`.
 - **Key commits on branch `main`** (verified 2026-11-08): the Phase 1 remediation (`0459921`), the Phase 2 report (`9b52a8a`), the Phase 3 report (`ac178c3`), the Phase 4 completion (`1f510f7`, `Complete Phase 4 model development and evaluation`) and the Phase 5 design documentation (`a84f94a`, originally `4c463f4`, `docs: finalize approved Phase 5 design documentation`). Use `git log` for the current `HEAD`.
 - **Documentation set:** `README.md`, `docs/PROJECT_CONTEXT.md`, `docs/WORK_LOG.md`, `docs/TECHNICAL_DOCUMENTATION.md` (created in Phase 4b), and `docs/FINAL_REPORT.md` (a pending placeholder, created in Phase 4b). Topic documents: `docs/business_understanding.md`, `docs/validation_strategy.md`. Retrospective phase reports: `docs/reports/` (Phase 1: `phase1_foundation.md`; Phase 2: `phase2_data_understanding.md`; Phase 3: `phase3_data_splitting.md`; Phase 4: `phase4_model_development.md`, committed in `1f510f7`; Phase 5B-0: `PHASE_5B_0_COMPLETION_REPORT.md`; created in the sessions below). Phase 5 protocol: `docs/phase_5a_experimental_protocol.md`. Policy: `docs/result_storage_policy.md`. Dataset: `data/README.md`.
+
+## Phase 5B-3 session — calibration, criteria E1/E2, champion decision (2026-11-14)
+
+Started on the mentor's approval of the readiness assessment with decisions D1–D8 (2026-11-14). Nothing frozen was changed (configuration SHA-256 `86ab5adb…`). Full detail: `docs/reports/PHASE_5B_3_REPORT.md`.
+
+- **Mentor decisions applied:**
+  - D1: E1 and E2 are the only champion gates.
+  - D2: no numeric AP threshold; practical relevance = additional frauds at equal alert volume.
+  - D3: fixed-K, break-even and sensitivity now; time-based queue and per-scenario thresholds deferred. **Logged ordering deviation:** steps 6–7 ran before the deferred part of step 5; the decision uses step 6 only.
+  - D4: full Section 6.5.
+  - D5: calibration-evaluation bootstrap CBB, 15 min, B = 5,000.
+  - D6: own Platt fitter with public APIs only, compared with `CalibratedClassifierCV` + `FrozenEstimator`.
+  - D7: zero-fraud E1 replicates dropped and counted; ΔAP = 0 not positive; stationary lengths geometric with mean L, truncated at T.
+  - D8: reliability PNGs in `reports/figures/`.
+- **New files:** `src/evaluation/{evidence_labels,block_bootstrap,calibration,e2_stability,practical}.py`, `src/models/{phase5b3_champion,run_phase5b3}.py`, `src/visualization/phase5b3_figures.py`, five test files, `reports/phase5b3_results.json` (about 0.32 MB), three figures, `docs/reports/PHASE_5B_3_REPORT.md`. No earlier module or result file changed.
+- **Continuity [V]:** the recomputed 28 score vectors reproduce `reports/phase5b2_grid_results.json` exactly (all 28 APs identical; LR-10 / HGB-14 re-selected).
+- **Calibration [V] (model-generated; supporting evidence, not a gate):**
+  - Both calibrators are valid. LR A = 0.513, B = −7.39; HGB A = 0.461, B = −3.17.
+  - All 2,000 `T_cal` bootstrap replicates are valid for each model.
+  - Validation O/E: LR 1.22 [Garwood 0.92, 1.59], HGB 1.31 [0.99, 1.70]. Slopes 1.25 and 1.33. Brier 0.000390 vs 0.000395; log loss 0.00227 vs 0.00216.
+  - The paired Brier and log-loss differences both contain 0.
+  - Both models under-predict on validation, consistent with the prevalence shift between `T_cal` and validation. Reported, not acted on.
+  - **Fitter check:** LR differs from the public calibrator by 2.1e-6 in logit, above the 1e-6 flag. The own fit is at the optimum (gradient 3e-11); scikit-learn stops earlier (1e-5). This is documented in the results file; HGB agrees to 5e-9.
+- **E1 [V]:** observed ΔAP = +0.0151. CBB 95% intervals: 10 min [−0.0098, +0.0466], 15 min [−0.0105, +0.0480], 30 min [−0.0092, +0.0415]. **Fails.** MBB and stationary agree.
+- **E2 [V]:** 1,984 of 2,000 splits usable. Held-out split-stability frequency 77.2% (< 90%); median held-out ΔAP +0.0124. **Fails.**
+- **Champion:** **LR-10 retained**: no sufficient evidence for replacement at this sample size; not a finding that LR is better.
+- **Fixed-K [V] (model-generated):** TP LR / HGB = 25/25, 44/44, 49/48, 51/51, 52/52 at K = 25/50/100/250/500. Every paired ΔTP interval contains 0.
+- **Hypothetical scenarios (assumed_scenario_input → simulated_outcome; HYPOTHETICAL, not business results):** over the assumed R grid {5 … 500} and assumed 5/10/15 min per review, the two models have identical simulated costs at every K except K = 100, where LR is cheaper by R review units. No operating point is selected.
+- **Hypothetical disclosure:** four evidence classes in every result block; `require_disclosed` refuses unlabelled scenario content. README, PROJECT_CONTEXT, TECHNICAL_DOCUMENTATION, business_understanding and FINAL_REPORT now state the requirement; `tests/test_hypothetical_disclosure.py` enforces it.
+- **Status correction:** PROJECT_CONTEXT and this log now record Phase 5B-2 as committed in `e4f60ee`. Historical lines are kept and marked.
+- **Reproducibility [V]:** a second full run is identical except `runtime_seconds`.
+- **Tests [V]:** focused 87/87 (calibration 24, bootstrap 20, E2 11, runner 19, hypothetical disclosure 13); full suite 421/421 with `-W error::FutureWarning` (334 before Phase 5B-3). Result file 325,156 B (within the 5 MB target); the three figures are byte-identical across runs.
+- **Not done:** the time-based queue, per-scenario thresholds, the W1 → W2 replay, the freeze manifest and any test evaluation. No commit.
 
 ## Phase 5B-2 session, part II — protocol Section 4.2 step 2: 28-configuration grid (2026-11-11)
 

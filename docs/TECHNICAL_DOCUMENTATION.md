@@ -2,7 +2,7 @@
 
 Reference for implemented and tested components. Methodology and status live in `docs/PROJECT_CONTEXT.md`, and experiment history and results in `docs/WORK_LOG.md`. This file describes only code that exists and is covered by tests.
 
-Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`), plus the Phase 5B-0 infrastructure modules (settings, ranking score, E2 blocks, reproducibility) and the Phase 5B-1 modules (`T_fit`/`T_cal` sub-partitions, E2 usability, three-track Phase 4 continuity; committed in `aa4e63a`) and the Phase 5B-2 modules (`log1p(Amount)` feature, fixed-K capacity metrics, experiments E0–E3; implemented 2026-11-11, awaiting mentor review).
+Status: covers Phase 4a (chronological split), Phase 4b (baseline modeling, committed in `4b5b94b`) and Phase 4c (threshold analysis and temporal stability, approved and committed in `cffc32c`), plus the Phase 5B-0 infrastructure modules (settings, ranking score, E2 blocks, reproducibility) and the Phase 5B-1 modules (`T_fit`/`T_cal` sub-partitions, E2 usability, three-track Phase 4 continuity; committed in `aa4e63a`) and the Phase 5B-2 modules (`log1p(Amount)` feature, fixed-K capacity metrics, experiments E0–E3, 28-configuration grid; committed in `e4f60ee`) and the Phase 5B-3 modules (calibration, block bootstrap, criteria E1/E2, champion rule, practical relevance, evidence classes; implemented 2026-11-14, awaiting mentor review).
 
 ## Running
 
@@ -16,6 +16,7 @@ python -m src.models.run_threshold_analysis     # Phase 4c threshold analysis (s
 python -m src.models.run_phase5b1                # Phase 5B-1 (--output PATH)
 python -m src.models.run_phase5b2                # Phase 5B-2 experiments E0-E3 (--output PATH; about 65 s)
 python -m src.models.run_phase5b2_grid           # Protocol 4.2 step 2: 28-configuration grid (--output PATH; about 4 min)
+python -m src.models.run_phase5b3                # Phase 5B-3: calibration, E1/E2, champion decision (--output PATH, --figures-dir PATH)
 ```
 
 Both runners read `data/raw/creditcard.csv` by default. They write `reports/phase4b_baseline_results.json` (about 5 seconds) and `reports/phase4c_threshold_results.json` (about 9.5 MB, about 3 seconds).
@@ -262,6 +263,57 @@ E2 block convention (protocol Appendix C, item C4):
 - `summarize(run, config, ...)` gives track B/C metrics (fixed-K, windows) per configuration, track A on LR-10, the 28-row table (AP, ROC-AUC, Recall@100), the step-3 record and continuity with the Part I experiments.
 - Wall-clock fields (`runtime_seconds`, `hgb_determinism.*.second_fit_seconds`) are the only non-reproducible values.
 
+## Phase 5B-3 modules (calibration, criteria E1 and E2, champion decision)
+
+Mentor decisions D1–D8 (2026-11-14) govern this phase. E1 and E2 are the only champion gates; calibration and practical relevance are supporting evidence.
+
+### `src/evaluation/evidence_labels.py` (mandatory hypothetical disclosure)
+- Four evidence classes: `observed_dataset`, `model_generated`, `assumed_scenario_input`, `simulated_outcome`. The last two are **hypothetical**: no real investigation cost, financial loss or operational capacity was provided to the project.
+- `labelled(evidence_class, payload)` builds a result block; hypothetical blocks also get `hypothetical: true` and the fixed disclosure text.
+- `require_disclosed(result, sections)` refuses a result whose sections lack a class, or whose scenario keys (`SCENARIO_KEYS`, for example assumed cost ratios or analyst-hours) sit outside a hypothetical block. A block inherits the nearest enclosing class.
+- `undisclosed_sections(markdown)` lists documentation sections that use a scenario term without the word "hypothetical" or the protocol's `[H]` mark; `notebook_markdown` does the same for notebooks.
+- The labels are **not** added to `src/models/phase5_settings.py`, so the frozen configuration hash is unchanged.
+
+### `src/evaluation/block_bootstrap.py` (protocol Sections 7.2–7.4)
+- Blocks are time intervals in whole seconds. A replicate concatenates ⌈T/L⌉ blocks and truncates the last, so the resampled duration is exactly T.
+- Schemes: `cbb` (circular, primary), `mbb` (moving blocks, sensitivity), `stationary` (geometric lengths with mean L, truncated at T; sensitivity).
+- `iter_replicate_weights` yields an integer weight per original row; one fresh `default_rng(seed)` per analysis, with a fixed and tested draw order.
+- `RankedScores` gives weighted AP (tied scores as one step, equal to scikit-learn on the expanded resample) and weighted TP@K under the Section 9.2 key.
+- `paired_block_bootstrap` evaluates every model on identical weights (pairing). `interval_summary` gives the percentile 95% interval, drops and counts zero-fraud replicates, and reports the centring bias.
+- `block_jackknife` (delete-one-block standard error), `stratified_iid_bootstrap` (Phase 4 continuity only) and `status_dependence` (the Section 7.4 TP/FN/discordant diagnostic) are cross-checks; they select nothing.
+
+### `src/evaluation/calibration.py` (protocol Sections 6.3–6.5)
+- `fit_platt` fits `p = expit(A·s + B)` against Platt's smoothed targets with a damped Newton method (Lin, Lin and Weng 2007) on standardized scores. It uses public NumPy and SciPy functions only, **no scikit-learn private API** (decision D6). It reports failures (no positives, constant scores, non-convergence) instead of raising.
+- `classify_calibrator` / `primary_calibrator` apply the technical-failure rule on `T_cal` alone: fit failure, slope A ≤ 0, or numerically constant logits (population SD < 1e-8). A failed model keeps its uncalibrated scores.
+- `calibration_metrics`: O/E with the Garwood interval, intercept and slope with profile-likelihood intervals, Brier score, Brier skill, log loss from logits. No ECE.
+- `decade_reliability` uses the frozen decade bins with Clopper–Pearson intervals; bins with fewer than 5 observed or 5 expected frauds are flagged "not interpretable". `k_derived_score_edges` takes scores only (no labels).
+- `tcal_calibrator_bootstrap` is bootstrap (A): CBB of `T_cal`, refitting only the sigmoid; invalid categories are counted, and at least 90% valid replicates are required.
+- `calibration_evaluation_bootstrap` is bootstrap (B): CBB of validation for frozen probability vectors. Direct metrics are never excluded; a negative slope is a kept result.
+- `isotonic_probabilities` is the isotonic sensitivity; it never replaces the sigmoid.
+
+### `src/evaluation/e2_stability.py` (criterion E2, protocol Section 7.5)
+- `e2_selection_aware` reuses the frozen blocks, buffer, seed and usability rule. On each usable split it re-selects the best LR and HGB among all 28 cached score vectors on the selection half (Section 5.4 rule) and evaluates the pair on the buffered held-out half.
+- `e2_gate`: at least 1,000 usable splits, held-out split-stability frequency ≥ 90% (ΔAP = 0 is not positive) and median held-out ΔAP > 0. Below 1,000 usable splits nothing is computed.
+- A selection half without any fraud raises an error, because the protocol does not define that case.
+
+### `src/models/phase5b3_champion.py`
+- `e1_gate` requires the CBB 95% lower bound of ΔAP to be > 0 at 10, 15 and 30 minutes.
+- `champion_decision(e1, e2)` has exactly two parameters. Calibration, Precision@K, business scenarios, the replay and test data cannot enter the decision.
+
+### `src/evaluation/practical.py` (supporting evidence only)
+- `fixed_k_comparison` (model-generated): TP/FP per model and ΔTP@K at equal alert volume.
+- `scenario_inputs` (assumed) and `scenario_outcomes` (simulated) are **hypothetical**: break-even ratios K/TP and R\* = ΔAlerts/ΔTP where defined, costs in review units over the frozen R grid, and analyst-hours at the frozen 5/10/15 minutes per review. No numeric AP threshold exists and no operating point is selected.
+
+### `src/visualization/phase5b3_figures.py`
+- `reliability_figure`: log-scaled reliability diagram on the frozen decade bins.
+- `fixed_k_scenario_figure`: frauds caught at fixed K (model-generated) beside analyst-hours under assumed review minutes; its title carries the hypothetical label.
+
+### `src/models/run_phase5b3.py`
+- `analyse(run, config, replicates, recorded_grid, figures_dir)` runs every step from the in-memory score cache of `compute_grid`. It stops if the recomputed grid differs from `reports/phase5b2_grid_results.json`.
+- The K-derived reliability edges are computed from validation scores before validation labels are used for any calibration metric.
+- The result is refused by `require_disclosed` unless every section carries an evidence class.
+- `Replicates` holds the replicate counts; real runs use `frozen_replicates()` (5,000 / 2,000 / 2,000 / 5,000). Smaller values are for synthetic tests only.
+
 ## Adding a dataset
 
 1. Add a `DatasetConfig` with the target, the features or exclusions, and optionally a time column and duplicate-group columns.
@@ -285,6 +337,11 @@ Feature columns must be numeric and finite. Categorical encoding and imputation 
 | `tests/test_phase5b1.py` | 34 | Phase 5B-1: frozen `T_fit`/`T_cal` boundaries and refusals; order/index/equal-timestamp preservation; integrity and estimability checks; usability boundaries (9/10 frauds, 999/1,000 splits); hand-computed buffer case; conservation; frozen draws; score-track validator; read-only historical quote; `T_fit`-only fit and AP recomputation; test-label/feature invariance of the runner with a validation-label control; real-data `T_fit`/`T_cal` counts and E2 regression against `reports/phase5b1_results.json` |
 | `tests/test_phase5b2.py` | 41 | Phase 5B-2: `log1p` values, zero handling, immutability, statelessness and refusals; experiment and feature-set definitions (no `Time`; pairs differ only by `log1p_Amount`; LR = Phase 4; HGB = frozen grid point); refusal of non-`T_fit`/non-validation rows; scaler fitted on `T_fit` only; identical validation rows; track B/C scores equal the pipeline outputs; E0 = Phase 5B-1 primary; HGB determinism; E3 ≡ E2 mechanism; hand-computed P@K/R@K, tie-break and tie range, label-free order, K edge cases; track validator; windows; held-out halves equal the `e2_usability` count; synthetic test-isolation invariance with a validation-label control; real-data quoted track A, E0 continuity and full recomputation against `reports/phase5b2_results.json` |
 | `tests/test_phase5b2_grid.py` | 18 | Grid = frozen product (12 + 16) with every fixed value applied and no deprecated `penalty=`; frozen features; row-role refusals; `T_fit`-only fit; `T_cal`/validation scores equal pipeline outputs; LR-10/HGB-14 reproduce the Part I builders; convergence-refit rule; Section 5.4 tie-break (LR, HGB) and refusals; synthetic end-to-end with test-isolation invariance; real-data counts, continuity, 16/16 HGB determinism and reproducible selection |
+| `tests/test_phase5b3_calibration.py` | 24 | Phase 5B-3 calibration: Platt recovery and optimality, equivalence with the public `CalibratedClassifierCV` + `FrozenEstimator`, weights, scale invariance, separation, failure classification; Garwood, Clopper–Pearson, Brier, log loss, profile intervals, reliability bins, label-free K edges; bootstraps (A) and (B) |
+| `tests/test_phase5b3_bootstrap.py` | 20 | Block bootstrap schemes, exact duration, pinned seeded draws, inclusion weights; weighted AP / TP@K equal the expanded resample; pairing and zero-fraud handling; jackknife; dependence diagnostic; E1 gate; champion truth table and two-input signature |
+| `tests/test_phase5b3_e2.py` | 11 | E2 gate boundaries; re-selection on the selection half only; held-out-label independence of the selection; not-estimable path; undefined case refused |
+| `tests/test_phase5b3_run.py` | 19 | Runner end to end on synthetic data (evidence classes, gates-only decision, test isolation, rerun identity, figures, grid-mismatch stop); practical relevance by hand; recorded-results regression |
+| `tests/test_hypothetical_disclosure.py` | 13 | Evidence classes; scenario content outside hypothetical blocks rejected; living documents, Phase 5B-3 work-log entries, notebooks and the scenario figure disclose hypothetical scenarios; frozen hash unchanged |
 | `tests/test_reproducibility.py` | 24 | Dataset check (missing, mismatch, ok, exit codes) on temporary files; strict JSON; absolute-path detection; no personal paths in code and onboarding docs; size policy; exact pins; environment manifest; freeze-manifest template, drift guard and frozen-status rules |
 
-Real-data tests are skipped when `data/raw/creditcard.csv` is absent. `TestSyntheticFittedIntegration` is the only Phase 5B-0 test that fits models, and only on synthetic arrays. Phase 5B-1 tests fit the continuity LR on synthetic data; none reads a test-partition label. Phase 5B-2 tests fit E0–E3 on synthetic data, plus one real-data recomputation that removes test rows first. The grid tests fit all 28 configurations on synthetic data only. The full suite has 334 tests (275 before Phase 5B-2; 316 after part I).
+Real-data tests are skipped when `data/raw/creditcard.csv` is absent. `TestSyntheticFittedIntegration` is the only Phase 5B-0 test that fits models, and only on synthetic arrays. Phase 5B-1 tests fit the continuity LR on synthetic data; none reads a test-partition label. Phase 5B-2 tests fit E0–E3 on synthetic data, plus one real-data recomputation that removes test rows first. The grid tests fit all 28 configurations on synthetic data only. The Phase 5B-3 tests fit the 28 configurations and the calibrators on synthetic data; their real-data checks read the recorded result file only. The full suite has 421 tests (334 before Phase 5B-3; 275 before Phase 5B-2; 316 after part I).

@@ -70,6 +70,23 @@ These are planned methods, not results. *Superseded (2026-11-09):* K values, the
 
 The amount-aware decision policy is excluded; amount-aware cost accounting is kept as a sensitivity. No operational threshold has been set, and the statement above that a monetary cost function cannot yet be specified credibly still holds. The full list of Phase 5 decisions is in `docs/PROJECT_CONTEXT.md`.
 
+## Hypothetical-scenario disclosure (project-wide requirement, 2026-11-14)
+
+Every business or operational scenario in this project uses **assumed** parameters. No real investigation cost, financial loss or operational capacity has been provided. Every artifact therefore separates four evidence classes:
+
+| Evidence class | Meaning | Hypothetical? |
+|---|---|---|
+| `observed_dataset` | Read from the dataset: rows, frauds, timestamps, amounts | no |
+| `model_generated` | Computed from fitted models and the data: scores, AP, calibration metrics, bootstrap intervals, the champion gates | no |
+| `assumed_scenario_input` | An assumed operational parameter: review-cost ratio R, minutes per review, review capacity, SLA | **yes** |
+| `simulated_outcome` | Computed from model results and assumed inputs: break-even ratios, costs in review units, analyst-hours | **yes** |
+
+Simulated savings, hypothetical costs and assumed capacities are never actual business outcomes and must not be presented as such.
+
+- The requirement applies to result files, reports, documentation, notebooks, figures and any presentation.
+- It is enforced by code and tests: `src/evaluation/evidence_labels.py` and `tests/test_hypothetical_disclosure.py` (see `docs/TECHNICAL_DOCUMENTATION.md`).
+- The protocol's `[H]` label marks the same hypothetical inputs in `docs/phase_5a_experimental_protocol.md`.
+
 ## Dataset reference
 
 The local dataset documentation points to the Kaggle **Credit Card Fraud Detection** dataset. The publisher's description says the data covers two days and contains 284,807 transactions with 492 frauds; `V1`–`V28` are principal components obtained with PCA, while `Time` and `Amount` are not PCA-transformed. `Class` is the fraud target (1 for fraud, 0 otherwise). See the [dataset source](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud) and the repository's [dataset instructions](../data/README.md).

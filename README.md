@@ -2,17 +2,22 @@
 
 FraudGuard is an educational portfolio project on machine learning for credit-card fraud detection. It uses a public, anonymized dataset. It is not a production system and makes no claim of operational effectiveness.
 
-**Status (2026-11-11):**
+**Status (2026-11-14):**
 - Phases 1–4 are complete; Phase 4 (model development and evaluation) is mentor-approved.
 - Phase 5A, the experimental protocol, is approved and closed. The approved protocol is [docs/phase_5a_experimental_protocol.md](docs/phase_5a_experimental_protocol.md) (Revision 4), with implementation clarifications in its Appendix C.
 - **Phase 5B-0** (protocol and documentation remediation, reproducibility infrastructure) is **complete and mentor-approved** (2026-11-11).
 - **Phase 5B-1** (E2 usability, `T_fit`/`T_cal` partition, Phase 4 continuity) is committed. E2 has 1,984 of 2,000 usable splits (estimable). The Phase 4 configuration refitted on `T_fit` scores validation AP 0.8536 (`decision_function`) against the historical 0.8397. See [docs/reports/PHASE_5B_1_REPORT.md](docs/reports/PHASE_5B_1_REPORT.md).
-- **Phase 5B-2** (controlled experiments E0–E3: Logistic Regression and one fixed HistGradientBoosting configuration, each with and without `log1p(Amount)`) is implemented and awaiting mentor review; not committed.
+- **Phase 5B-2** (controlled experiments E0–E3: Logistic Regression and one fixed HistGradientBoosting configuration, each with and without `log1p(Amount)`) is committed (`e4f60ee`).
   - Validation AP: LR 0.8536 / 0.8539, HGB 0.8686 (identical with `log1p`).
   - HGB's small advantage is concentrated in the second validation window and does not change frauds caught at the illustrative alert capacities.
   - See [docs/reports/PHASE_5B_2_REPORT.md](docs/reports/PHASE_5B_2_REPORT.md).
-- **Phase 5B-2 part II** (protocol step 2): all 28 pre-registered configurations were fitted and scored. The pre-registered rule records LR-10 (the Phase 4 configuration, AP 0.8536) and HGB-14 (AP 0.8686) as candidates for the later gates. It is awaiting mentor review; not committed.
-- No calibrator, champion decision or test evaluation has been run.
+- **Phase 5B-2 part II** (protocol step 2): all 28 pre-registered configurations were fitted and scored. The pre-registered rule records LR-10 (the Phase 4 configuration, AP 0.8536) and HGB-14 (AP 0.8686) as candidates for the later gates. It is committed (`e4f60ee`).
+- **Phase 5B-3** (calibration, criteria E1 and E2, champion decision) is implemented and awaiting mentor review; not committed.
+  - **Champion: LR-10** (the Phase 4 Logistic Regression configuration). HGB-14 failed both pre-registered gates. That means not enough evidence for replacement with 56 validation frauds, not that LR is better.
+  - Both models are calibrated with a sigmoid on `T_cal`, and calibration is evaluated separately from ranking.
+  - At equal alert volume, the two models catch the same frauds within one.
+  - See [docs/reports/PHASE_5B_3_REPORT.md](docs/reports/PHASE_5B_3_REPORT.md).
+- No test evaluation has been run.
 
 Details: [Roadmap](#roadmap) and [docs/WORK_LOG.md](docs/WORK_LOG.md).
 
@@ -173,7 +178,9 @@ python -m src.models.run_threshold_analysis    # Phase 4c: writes reports/phase4
 - Fields such as the recorded Python or package versions differ if your environment differs. Identical metric values are expected only with the pinned versions.
 - **Phase 5B-1:** `python -m src.models.run_phase5b1` writes `reports/phase5b1_results.json` (about 7 s). It verifies the dataset fingerprint and removes test rows before reading any label. It builds `T_fit`/`T_cal`, counts E2 usable splits on validation, and fits the Phase 4 LR configuration on `T_fit` for the continuity comparison. A rerun reproduces the file byte for byte in the verified environment.
 - **Phase 5B-2:** `python -m src.models.run_phase5b2` writes `reports/phase5b2_results.json` (about 65 s). It fits experiments E0–E3 once each on `T_fit` and evaluates them on validation in three score tracks (historical, primary `decision_function`, diagnostic `predict_proba`), with fixed-K capacity metrics, Window 1/2 results and held-out-half stability. A rerun reproduces the file except the wall-clock `runtime_seconds` field.
-- Later Phase 5 stages are not implemented yet. They will follow the approved protocol, and their commands will be added here when they exist.
+- **Phase 5B-2 part II:** `python -m src.models.run_phase5b2_grid` writes `reports/phase5b2_grid_results.json` (about 4 min). It fits the 28 pre-registered configurations on `T_fit` and records the candidates LR-10 and HGB-14.
+- **Phase 5B-3:** `python -m src.models.run_phase5b3` writes `reports/phase5b3_results.json` and three figures in `reports/figures/`. It recomputes the 28 score vectors, fits the sigmoid calibrators on `T_cal`, evaluates calibration, runs criteria E1 and E2, records the champion decision, and adds the fixed-K comparison with labelled hypothetical scenarios. A rerun reproduces the file except the wall-clock `runtime_seconds` field.
+- Later Phase 5 stages (time-based queue, per-scenario thresholds, the Window 1 → Window 2 replay, the freeze manifest and the final test evaluation) are not implemented yet. They will follow the approved protocol, and their commands will be added here when they exist.
 
 To record your own environment, run `python -m src.reproducibility.manifest environment`. It rewrites `reports/environment_manifest.json` with your Python and package versions, the dataset fingerprint status, the Git commit and the frozen seeds. It contains no absolute paths.
 
@@ -184,11 +191,13 @@ To record your own environment, run `python -m src.reproducibility.manifest envi
 | `reports/phase4b_baseline_results.json` | Phase 4b validation metrics (majority baseline, Logistic Regression) | yes |
 | `reports/phase4c_threshold_results.json` | Phase 4c threshold curves and window transfer (about 9.5 MB) | yes |
 | `reports/phase5b1_results.json` | Phase 5B-1: `T_fit`/`T_cal` counts, E2 usability, three-track Phase 4 continuity (development figures) | yes |
-| `reports/phase5b2_results.json` | Phase 5B-2: experiments E0–E3, tracks A/B/C, fixed-K, windows, held-out-half stability (development figures) | yes, once committed |
-| `reports/phase5b2_grid_results.json` | Protocol step 2: 28-configuration grid metrics, tracks, determinism, step-3 candidates (development figures) | yes, once committed |
+| `reports/phase5b2_results.json` | Phase 5B-2: experiments E0–E3, tracks A/B/C, fixed-K, windows, held-out-half stability (development figures) | yes |
+| `reports/phase5b2_grid_results.json` | Protocol step 2: 28-configuration grid metrics, tracks, determinism, step-3 candidates (development figures) | yes |
+| `reports/phase5b3_results.json` | Phase 5B-3: calibrators and calibration evaluation, criteria E1 and E2, champion decision, fixed-K comparison; every block carries an evidence class, and scenario blocks are labelled hypothetical (development figures) | yes, once committed |
 | `reports/environment_manifest.json` | Environment, dataset fingerprint, commit, seeds | yes |
 | `docs/templates/phase5_freeze_manifest.template.json` | Empty template of the Phase 5 freeze manifest (no results) | yes |
-| `reports/figures/` | Figures (none yet) | yes, when added |
+| `reports/figures/phase5b3_reliability_lr.png`, `phase5b3_reliability_hgb.png` | Phase 5B-3 reliability diagrams (model-generated; frozen decade bins, log scale) | yes, once committed |
+| `reports/figures/phase5b3_fixed_k_scenarios.png` | Frauds caught at fixed K (model-generated) and analyst-hours under assumed review minutes (**hypothetical** scenario figure) | yes, once committed |
 | `artifacts/` | Fitted models, if ever saved | **no** |
 | `data/raw/`, `data/processed/` | Datasets | **no** |
 
@@ -215,10 +224,24 @@ The rules are in [docs/result_storage_policy.md](docs/result_storage_policy.md):
 - **Primary validation:** a chronological 70/15/15 split by `Time` (train ≤ 132,928 s; validation 132,929–151,328 s; test ≥ 151,329 s), keeping equal timestamps together. The **test partition is untouched until a single final evaluation**, after every decision is frozen.
 - **Features:** `V1`–`V28` and `Amount`. `Time` is used for splitting only.
 - **Phase 4:** a majority-class baseline and a class-weighted Logistic Regression, followed by threshold analysis with a Window 1 → Window 2 transfer check.
-- **Phase 5 (approved protocol, not yet run):**
+- **Phase 5 (approved protocol; run up to the champion decision, see the status above):**
   - Logistic Regression is the default model. One HistGradientBoosting challenger replaces it only if both pre-registered criteria, E1 and E2, pass.
   - Sigmoid calibration on a temporal holdout taken from the end of training. If calibration fails technically, the model keeps its uncalibrated scores; the cross-fitted ensemble (C-F) is a retrospective sensitivity only, never a fallback.
   - Paired block bootstrap; fixed-K and time-based review capacity with 1/2/4-hour SLAs; hypothetical review-cost scenarios; a Window 1 → Window 2 decision replay.
+  - Calibration and business scenarios are supporting evidence. They are never champion gates, and no numeric AP threshold defines a "practical" improvement.
+
+## Hypothetical scenarios: mandatory disclosure
+
+No real investigation cost, financial loss or operational capacity has been provided to this project. Every business or operational scenario therefore uses **assumed** parameters, and every artifact separates four evidence classes:
+
+| Evidence class | Meaning | Hypothetical? |
+|---|---|---|
+| `observed_dataset` | Read from the dataset (rows, frauds, timestamps) | no |
+| `model_generated` | Computed from fitted models and the data (AP, calibration metrics, bootstrap intervals, champion gates) | no |
+| `assumed_scenario_input` | Assumed operational parameter (review-cost ratio, minutes per review, capacity, SLA) | **yes** |
+| `simulated_outcome` | Computed from model results and assumed inputs (break-even ratios, costs in review units, analyst-hours) | **yes** |
+
+Simulated savings, hypothetical costs and assumed capacities are never actual business outcomes. The rule covers result files, reports, documentation, notebooks, figures and presentations, and `tests/test_hypothetical_disclosure.py` enforces it.
 
 ## Documentation index
 
@@ -231,7 +254,7 @@ The rules are in [docs/result_storage_policy.md](docs/result_storage_policy.md):
 | [docs/business_understanding.md](docs/business_understanding.md) | Business framing and evaluation considerations |
 | [docs/TECHNICAL_DOCUMENTATION.md](docs/TECHNICAL_DOCUMENTATION.md) | Reference for every implemented module |
 | [docs/result_storage_policy.md](docs/result_storage_policy.md) | What is tracked in Git; result-file size limits |
-| [docs/reports/](docs/reports/) | Phase reports (Phases 1–4 retrospective audits; Phase 5B-0 completion report; Phase 5B-1 and 5B-2 reports) |
+| [docs/reports/](docs/reports/) | Phase reports (Phases 1–4 retrospective audits; Phase 5B-0 completion report; Phase 5B-1, 5B-2 and 5B-3 reports) |
 | [data/README.md](data/README.md) | Dataset source, placement, integrity and policy |
 | [docs/FINAL_REPORT.md](docs/FINAL_REPORT.md) | Placeholder, written only when the project is complete |
 
@@ -245,8 +268,9 @@ The rules are in [docs/result_storage_policy.md](docs/result_storage_policy.md):
    - **5A** experimental protocol: approved and closed (2026-11-09).
    - **5B-0** protocol and documentation remediation, reproducibility infrastructure: complete, mentor-approved (2026-11-11).
    - **5B-1** E2 usability, `T_fit`/`T_cal` partition helper, three-track Phase 4 continuity: committed (2026-11-11).
-   - **5B-2** controlled experiments E0–E3 (LR / one HGB configuration × baseline / + `log1p(Amount)`): implemented, awaiting mentor review (2026-11-11).
-   - **Later stages** (28-configuration grid, selection, calibration, criteria E1/E2, queue and cost analysis, final test): not started; each stage starts only on explicit approval.
+   - **5B-2** controlled experiments E0–E3 and the 28-configuration grid (candidates LR-10 and HGB-14): committed (`e4f60ee`).
+   - **5B-3** calibration, criteria E1/E2 and the champion decision (LR-10 retained); fixed-K comparison with labelled hypothetical scenarios: implemented, awaiting mentor review (2026-11-14).
+   - **Later stages** (time-based queue and per-scenario thresholds, W1 → W2 replay, freeze manifest, final test): not started; each stage starts only on explicit approval.
 6. Results communication and project presentation: not started.
 
 ## Dataset and license note

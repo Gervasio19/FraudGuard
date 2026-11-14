@@ -3,11 +3,16 @@
 ## Verified repository facts
 
 - FraudGuard is an educational credit-card fraud detection project.
-- Current project phase: **Phase 5B-2 part II: protocol Section 4.2 step 2, implemented and awaiting mentor review (2026-11-11); not committed.**
+- Current project phase: **Phase 5B-3: calibration, criteria E1 and E2, and the champion decision (protocol Section 4.2 steps 4, 6, 7 and the fixed-K part of step 5), implemented and awaiting mentor review (2026-11-14); not committed.**
+  - Champion: **LR-10**. E1 fails (CBB lower bounds −0.0098 / −0.0105 / −0.0092 at 10 / 15 / 30 min) and E2 fails (split-stability frequency 77.2% < 90%). LR is retained for lack of sufficient evidence, not because it is better.
+  - Both sigmoid calibrators are valid; both models under-predict on validation (O/E 1.22 and 1.31). Calibration and practical relevance are supporting evidence only (mentor decision D1).
+  - Report: `docs/reports/PHASE_5B_3_REPORT.md`; results: `reports/phase5b3_results.json`; figures: `reports/figures/phase5b3_*.png`.
+- *Previous phase:* **Phase 5B-2 (parts I and II) is committed in `e4f60ee`** ("Complete Phase 5B-2"; verified as HEAD on 2026-11-14). *(Corrected 2026-11-14: the status below, written before that commit, said "awaiting mentor review; not committed".)*
+- *Historical (end of Phase 5B-2 part II):* Phase 5B-2 part II: protocol Section 4.2 step 2, implemented and awaiting mentor review (2026-11-11); not committed.
   - All 28 frozen configurations were fitted once on `T_fit`, and `T_cal` and validation were scored once each.
   - Step-3 candidates under the Section 5.4 rule: **LR-10** (C = 1, balanced; validation AP 0.8536) and **HGB-14** (0.1 / 31 / 20 / balanced; 0.8686).
   - Results: `reports/phase5b2_grid_results.json`; report: `docs/reports/PHASE_5B_2_REPORT.md`, Part II.
-  - No calibration, criterion E1/E2 statistic, champion decision or test evaluation has been run.
+  - *Superseded by Phase 5B-3 (2026-11-14):* "No calibration, criterion E1/E2 statistic, champion decision or test evaluation has been run." Calibration, E1, E2 and the champion decision now exist; no test evaluation has been run.
 - *Part I of Phase 5B-2, mentor-approved with a scope clarification (E0 and experiment E2 protocol-aligned; E1 and E3 exploratory deviations only, never influencing champion selection):* controlled experiments E0–E3 (LR / HGB × baseline features / + `log1p(Amount)`). Implemented and awaiting mentor review (2026-11-11); not committed.** Report: `docs/reports/PHASE_5B_2_REPORT.md`; results: `reports/phase5b2_results.json`. One a-priori HGB grid point was fitted. No hyperparameter grid, selection, calibrator, criterion E1/E2 statistic or test evaluation has been run. `log1p(Amount)` (E1, E3) is a logged, owner-instructed exploratory deviation from protocol Section 5.5, outside the champion pathway.
   - *Previous phase:* Phase 5B-1 (E2 usability, `T_fit`/`T_cal` partition helper, three-track Phase 4 continuity), committed in `aa4e63a`. Report: `docs/reports/PHASE_5B_1_REPORT.md`; results: `reports/phase5b1_results.json`.
   - *Previous phase:* **Phase 5B-0 — protocol and documentation remediation and reproducibility infrastructure, complete and mentor-approved (2026-11-11).** Phase 5B-0 is committed: implementation in `7c4edcd` (`7c4edcdc400b1f4332c7d961f845662f65685ea9`), environment manifest in `aa67802` (`aa67802353f3646e7b5eb53237f3da8e8d263626`); see `git log` for the current push state.
@@ -44,6 +49,14 @@
 | Fixed-K capacity metrics (Phase 5B-2) | `src/evaluation/capacity.py`: Precision@K, Recall@K, TP/FP, oracle ceiling, Section 9.2 tie-break and boundary-tie report |
 | Experiments E0–E3 (Phase 5B-2) | `src/models/phase5b2_experiments.py`: definitions, the a-priori HGB grid point, fitting on `T_fit`, tracks A/B/C with a required `score_representation`, held-out-half stability (descriptive, not criterion E2); CLI `python -m src.models.run_phase5b2` |
 | 28-configuration grid (Phase 5B-2, protocol 4.2 step 2) | `src/models/phase5_grid.py`: frozen grid enumeration, builders, single `T_fit` fit with `T_cal` and validation scoring, Section 5.4 selection rule; CLI `python -m src.models.run_phase5b2_grid` (`compute_grid` returns the in-memory score cache) |
+| Evidence classes and hypothetical disclosure (Phase 5B-3) | `src/evaluation/evidence_labels.py`: four evidence classes, disclosure text, result and documentation checks |
+| Block bootstrap (Phase 5B-3) | `src/evaluation/block_bootstrap.py`: CBB / MBB / stationary replicate weights, weighted AP and TP@K, paired bootstrap, jackknife, dependence diagnostic |
+| Calibration (Phase 5B-3) | `src/evaluation/calibration.py`: Platt fit with public APIs only, technical-failure rule, Section 6.5 metrics and reliability tables, bootstraps (A) and (B), isotonic sensitivity |
+| Criterion E2 (Phase 5B-3) | `src/evaluation/e2_stability.py`: re-selection among the 28 cached score vectors on each selection half; frozen gate |
+| Champion rule (Phase 5B-3) | `src/models/phase5b3_champion.py`: `e1_gate`; `champion_decision(e1, e2)` takes the two gate records only |
+| Practical relevance (Phase 5B-3) | `src/evaluation/practical.py`: ΔTP@K at equal alert volume (model-generated); break-even, R-grid sensitivity and analyst-hours (hypothetical) |
+| Figures (Phase 5B-3) | `src/visualization/phase5b3_figures.py`: reliability diagrams; labelled scenario figure |
+| Phase 5B-3 runner | `src/models/run_phase5b3.py`; CLI `python -m src.models.run_phase5b3` |
 | Reproducibility (Phase 5B-0) | `src/reproducibility/dataset.py` (fingerprint check); `src/reproducibility/manifest.py` (environment manifest, freeze-manifest template, result-size policy) |
 
 Both splits return the same ordered categorical `train`/`validation`/`test` labels, so they plug into the same runner. Preprocessing lives inside each scikit-learn `Pipeline`, so `fit` on the training rows is the only place any statistic is learned. The runner refuses to evaluate on the test partition. Phase 4c fits once, scores validation once, and reuses those scores for every threshold and window analysis. Details: `docs/TECHNICAL_DOCUMENTATION.md`.
@@ -125,7 +138,7 @@ Phase 4b results are recorded in `docs/WORK_LOG.md` and `reports/phase4b_baselin
 - **Statistical comparison**
   - Paired bootstrap evaluation.
   - Temporal-block bootstrap for the online queue evaluation, when feasible. Otherwise: point estimates with sensitivity analysis.
-- **Operational evaluation**
+- **Operational evaluation** (every capacity, SLA and cost value below is a **hypothetical** scenario input, not an observed fact; see "Mandatory hypothetical-scenario disclosure")
   - Use case: the Analyst Review Queue (see `docs/business_understanding.md`).
   - Cost-sensitive evaluation with break-even analysis.
   - Review capacity is evaluated both as fixed-K capacity and as time-based capacity.
@@ -133,6 +146,23 @@ Phase 4b results are recorded in `docs/WORK_LOG.md` and `reports/phase4b_baselin
   - SLA scenarios of 1 hour, 2 hours and 4 hours.
 
 The existing rules still apply: the test partition stays untouched until final evaluation, and the test-partition scope (below) must be acknowledged before it is used. The Phase 1–4 results above are unchanged.
+
+## Mandatory hypothetical-scenario disclosure (project-wide, mentor decision 2026-11-14)
+
+Every business or operational scenario in this project uses **assumed** parameters. No real investigation cost, financial loss or operational capacity has been provided. Every artifact therefore separates four evidence classes:
+
+| Evidence class | Meaning | Hypothetical? |
+|---|---|---|
+| `observed_dataset` | Read from the dataset: rows, frauds, timestamps, amounts | no |
+| `model_generated` | Computed from fitted models and the data: scores, AP, calibration metrics, bootstrap intervals, the champion gates | no |
+| `assumed_scenario_input` | An assumed operational parameter: review-cost ratio R, minutes per review, review capacity, SLA | **yes** |
+| `simulated_outcome` | Computed from model results and assumed inputs: break-even ratios, costs in review units, analyst-hours | **yes** |
+
+Simulated savings, hypothetical costs and assumed capacities are never actual business outcomes and must not be presented as such.
+
+- **Where it applies:** README, this file, technical documentation, experiment and business reports, notebooks, the final report, figures and any presentation.
+- **How it is enforced:** result blocks carry an `evidence_class`; `require_disclosed` refuses scenario content outside a hypothetical block; `tests/test_hypothetical_disclosure.py` checks result files, living documents, notebooks and the scenario figure.
+- **What is not changed:** the labels are not added to `src/models/phase5_settings.py`, so the frozen configuration SHA-256 (`86ab5adb…`) is unchanged. Reports written before 2026-11-14 are preserved as they are; the protocol already marks hypothetical inputs with `[H]`.
 
 ## Scope and limits
 
@@ -159,7 +189,7 @@ The Phase 5 methodology and design briefing is complete, and its decisions are r
 - E2: 1,984 of 2,000 splits usable, so E2 is estimable under the pre-registered rule. No E2 statistic has been computed.
 - Continuity, validation AP: 0.8397 historical (`predict_proba`, full train, quoted); 0.8536 Phase 5 primary (`decision_function`, `T_fit`); 0.8536 diagnostic (`predict_proba`, same fit).
 
-**Next task:** mentor review of Phase 5B-2 part II (the grid and the recorded step-3 candidates LR-10 and HGB-14). Then, only on approval, step 4 (sigmoid calibration on `T_cal`). *Superseded:* "mentor review of Phase 5B-2, including the logged `log1p(Amount)` deviation" (approved; step 2 done). *(Earlier text: mentor review of Phase 5B-1.)* Then, only on approval, protocol Section 4.2 step 2 (fit the 28 configurations on `T_fit`, score `T_cal` and validation once each). The test partition stays untouched until final evaluation. Do not write the final report until the project is complete.
+**Next task (2026-11-14):** mentor review of Phase 5B-3. Then, only on approval, the deferred part of step 5 (time-based queue and per-scenario thresholds, all hypothetical scenarios), the W1 → W2 replay (step 8) and the freeze manifest (step 9). The test partition stays untouched until final evaluation. *Superseded:* "mentor review of Phase 5B-2 part II (the grid and the recorded step-3 candidates LR-10 and HGB-14). Then, only on approval, step 4 (sigmoid calibration on `T_cal`)." (Phase 5B-2 is committed in `e4f60ee`; step 4 is done.) *Superseded:* "mentor review of Phase 5B-2, including the logged `log1p(Amount)` deviation" (approved; step 2 done). *(Earlier text: mentor review of Phase 5B-1.)* Then, only on approval, protocol Section 4.2 step 2 (fit the 28 configurations on `T_fit`, score `T_cal` and validation once each). The test partition stays untouched until final evaluation. Do not write the final report until the project is complete.
 
 ## Assumptions
 
